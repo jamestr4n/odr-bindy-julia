@@ -1,0 +1,9 @@
+println("Hello World!")
+1 + 1 
+2^3
+3 < 2
+1 == 1 && 2 > 3
+1 == 1 || 2 > 3
+true + true * 2
+
+
