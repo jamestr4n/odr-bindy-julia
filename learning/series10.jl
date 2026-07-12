@@ -43,3 +43,19 @@ println("$s3 is a good boy!")
 s1 = "Hello"
 s1_s3 = s1 * s3
 
+#10.12 arrays
+
+col_vec = [5, 2, 3]
+typeof(col_vec)
+
+row_vec = Float32[1 2 3]
+typeof(row_vec)
+
+sort(col_vec)
+col_vec
+sort!(col_vec)
+
+matrix = [1 2 3; 4 5 6; 7 8 9]
+
+#10.13 Tuples
+
