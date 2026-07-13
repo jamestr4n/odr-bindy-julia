@@ -59,3 +59,46 @@ matrix = [1 2 3; 4 5 6; 7 8 9]
 
 #10.13 Tuples
 
+#10.14 Named Tuples
+
+dog = (
+    name = "doggo",
+    age = 3,
+    breed = "golden retriever"
+)
+dog[1]
+
+dog.name
+dog.breed
+
+#10.15 Dictionaries
+dog = Dict(
+    "name" => "doggo",
+    "age" => 3,
+    "breed" => "golden retriever"
+)
+dog["name"]
+
+#10.16 Struct
+
+mutable struct Dog
+    name::String
+    age::Int
+    breed::String
+end
+
+mydog = Dog(
+    "doggo",
+    3,
+    "golden retriever"
+)
+
+typeof(mydog)
+
+mydog.name
+mydog.age   
+mydog.breed
+
+mydog.name = "doggo2"
+mydog.age = 4
+mydog
