@@ -102,3 +102,65 @@ mydog.breed
 mydog.name = "doggo2"
 mydog.age = 4
 mydog
+
+# 10.17 Control flow: if statements
+
+x, y = 1, 2
+
+task_1() = println("$x > $y")
+task_2() = println("$x < $y")
+task_3() = println("$x == $y")
+
+if x > y 
+    task_1()
+elseif x < y
+    task_2()
+else
+    task_3()
+end
+
+# 10.18 Control flow: ternary operator
+x, y = 1, 2
+
+t1() = println("$x > $y")
+t2() = println("$x < $y")
+t3() = println("$x == $y")
+
+x > y ? t1() : (x < y ? t2() : t3())
+
+# 10.19 Control flow: while loops
+i = 1
+while i <= 5
+    println(i)
+    i += 1
+end
+
+# 10.20 Control flow: for loops
+for i in 1:2:10
+    println(i)
+end
+
+#10.21 Control flow: For loop over collection
+
+myarray = [10, 20, 30, 40, 50]
+
+for element in myarray
+    println(element)
+end
+
+mydog = Dict(
+    "name" => "doggo",
+    "age" => 3,
+    "breed" => "golden retriever"
+)
+
+for (key, value) in mydog
+    println("$key: $value")
+end
+
+# 10.22 Comprehension
+
+cubed = [x^3 for x in 1:5]
+
+# 10.23 Functions   
+
