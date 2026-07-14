@@ -164,3 +164,83 @@ cubed = [x^3 for x in 1:5]
 
 # 10.23 Functions   
 
+function myadd(x, y)
+    return x + y
+end
+
+myadd(1, 2)
+
+f(a, b) = sqrt(a^2 + b^2)
+f(2, 3)
+
+# 10.24 Multiple dispatch
+
+function mytypeof(x::Int64)
+    return "This is an Int64"
+end
+
+function mytypeof(x::Float64)
+    return "This is a Float64"
+end
+
+function mytypeof(x::Number)
+    return "This is a Number"
+end
+
+function mytypeof(x::Any)
+    return "This is something else"
+end
+
+
+
+function mygenericfunction(x)
+    println("$x is type: ",
+        mytypeof(x)
+        )
+end
+
+mygenericfunction(pi)
+mygenericfunction([1, 2, 3])
+
+struct Dog
+    name::String
+end
+
+function mytypeof(x::Dog)
+    return "This is a Dog"
+end
+
+mydog = Dog("doggo")
+mygenericfunction(mydog)
+
+methods(mytypeof)
+methods(mygenericfunction)
+
+# 10.25 Anonymous functions
+
+firstname = [
+"John", "Jane", "Jim"
+]
+
+map(length, firstname)
+map(x -> x * "Doggo", firstname)
+
+# 10.26 Julia's standard libraries
+
+rand(10)
+
+using Random
+Random.seed!(1)
+rand(10)
+
+Random.seed!(42)
+
+data = randn(1000)
+
+function average(x::Vector)
+    return sum(x) / length(x)
+end
+
+using Statistics
+
+mean(data)
