@@ -1,0 +1,15 @@
+# Julia
+Manifest.toml
+*.jl.cov
+*.jl.mem
+/docs/build/
+/docs/site/
+
+# Environment / editor
+.vscode/
+.DS_Store
+*.swp
+
+# Data / outputs (adjust as needed)
+*.log
+/output/
