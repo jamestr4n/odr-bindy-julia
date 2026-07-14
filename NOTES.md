@@ -1,22 +1,13 @@
 # Learning Notes
 
 A running log of what I've covered while learning Julia and implementing ODR-BINDy.
-Update this after each session so progress is easy to track.
+Updated regularly so progress is easy to track.
 
-## Template for each entry
 
-```
-### [Date] - [Topic]
-- What I worked on:
-- Key concepts learned:
-- Challenges / open questions:
-- Next steps:
-```
+## Timeline
 
-## Log
-
-### 2026-07-XX - Getting started with Julia basics
-- What I worked on: Basic syntax, arrays, functions in Julia
+### 2026-07-14 - Finished Series 10 - Introduction to Julia
+- What I worked on: Basic syntax, arrays, control flow, functions in Julia, installing and using external packages
 - Key concepts learned: (fill in)
 - Challenges / open questions: (fill in)
-- Next steps: (fill in)
+- Next steps: Series 7 - Differential Equations

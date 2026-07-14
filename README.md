@@ -1,6 +1,6 @@
 # odr-bindy-julia
 
-Julia implementation of ODR-BINDy — a personal learning project where I'm working through implementing ODR-BINDy (Orthogonal Distance Regression with Bayesian Inference for Nonlinear Dynamics) in Julia, as part of my ongoing coursework/research under my supervisor.
+Julia implementation of ODR-BINDy — a project where I'm working through implementing ODR-BINDy (Orthogonal Distance Regression with Bayesian Inference for Nonlinear Dynamics) in Julia, as part of my ongoing research under my supervisor.
 
 ## Purpose
 
@@ -8,8 +8,7 @@ This repository documents my process of learning Julia while re-implementing the
 
 ## Status
 
-🚧 Work in progress — currently working through: (fill in current topic, e.g. "basic ODR fitting examples in Julia")
-
+🚧 Work in progress — currently working through: Doggo dot jl Series 7 "Differential Equations"
 See [NOTES.md](NOTES.md) for a running log of what I've covered so far and what I'm learning in each session.
 
 ## Prerequisites
@@ -52,7 +51,7 @@ odr-bindy-julia/
 
 ## Background / references
 
-- ODR-BINDy paper or resource: (add link here)
+- ODR-BINDy paper or resource: 
 - Julia documentation: https://docs.julialang.org/
 
 ## Author
