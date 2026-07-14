@@ -244,3 +244,31 @@ end
 using Statistics
 
 mean(data)
+
+# 10.27 External packages
+
+using Plots
+
+f(x) = x^3 -2x
+
+plot(f)
+
+plot(f;
+    legend = false,
+    linewidth = 3,
+    color = :red,
+    lims = (-2, 2),
+    aspect_ratio = 1
+)
+
+using Random
+Random.seed!(42)
+
+xs = randn(1000)
+ys = randn(1000)
+
+scatter(xs, ys;
+    legend = false,
+    color = :blue,
+    alpha = 0.5
+)
