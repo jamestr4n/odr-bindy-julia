@@ -4,7 +4,7 @@ Julia implementation of ODR-BINDy — a project where I'm working through implem
 
 ## Purpose
 
-This repository documents my process of learning Julia while re-implementing the ODR-BINDy method. It is primarily a learning log rather than a finished software package, so code and structure will evolve as I progress.
+This repository documents my process of learning Julia while re-implementing the ODR-BINDy method. It will first primarily be a learning log rather than a finished software package, so code and structure will evolve as I progress.
 
 ## Status
 
