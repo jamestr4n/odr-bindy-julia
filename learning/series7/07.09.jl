@@ -109,6 +109,170 @@ md"""
 """
 
 # ╔═╡ 9d356612-7723-4f12-a7e0-f2bd5922affd
+sol.t
+
+# ╔═╡ 24b50db8-e31b-464b-8351-0bf3e82cac19
+n = length(sol.t)
+
+# ╔═╡ bb64f49c-2162-49f7-8c36-19f6d3e98225
+begin
+	reset
+	md"Index: $(@bind idx Slider(1:n, default = n, show_value = true))"
+end
+
+# ╔═╡ 067a8a17-85fe-49d5-9a0d-bfd473522cd4
+t = @view sol.t[1:idx]
+
+# ╔═╡ 3da30832-1bb8-4dc5-83b3-b445df9df78b
+time = t[idx]
+
+# ╔═╡ c0c8cbe9-2f74-4a87-9b45-45e0f75ac20e
+sol.u
+
+# ╔═╡ 54e05cbd-f741-4813-9526-f39e85d0b0e5
+u = @view sol.u[1:idx]
+
+# ╔═╡ 44d38c04-a03f-414b-a125-2c3b0f1da543
+sol_u_matrix = reduce(hcat, u)'
+
+# ╔═╡ 33e8ad00-ee5a-4fe3-97cc-7e14fa700332
+x = sol_u_matrix[:, 1]
+
+# ╔═╡ 9019485b-1b4d-4a88-bf9d-e2ca179fd261
+convection = x[idx]
+
+# ╔═╡ c78f7add-9741-4f81-9d3d-0e50f762a103
+p_x_t = plot(t, x,
+	legend = false,
+	title = "Lorenz System (Convection)",
+	xaxis = "t",
+	yaxis = "Convection (x)",
+	formatter = :plain,
+	widen = true,
+	xlims = (0.0, 100.0),
+	ylims = (-30.0, 50.0)
+)
+
+# ╔═╡ fbbaa00b-b85e-4ba0-8947-b684088c9315
+y = sol_u_matrix[:, 2]
+
+# ╔═╡ ad7f7b1f-49c4-41bb-a253-ba3a50e956d1
+horizontal = y[idx]
+
+# ╔═╡ 3cb38322-9a00-40dd-99ba-008e1d07f1f8
+p_y_t = plot(t, y,
+	legend = false,
+	title = "Lorenz System (Horizontal)",
+	xaxis = "t",
+	yaxis = "Horizontal (y)",
+	formatter = :plain,
+	widen = true,
+	xlims = (0.0, 100.0),
+	ylims = (-30.0, 50.0)
+)
+
+# ╔═╡ 5cdb7b77-070a-4b35-ab02-3e065a1d9c23
+phase_xy = plot(x, y,
+	legend = false,
+	title = "Lorenz Attractor (Phase Space x y)",
+	xaxis = "Convection (x)",
+	yaxis = "Horizontal (y)",
+	formatter = :plain,
+	widen = true,
+	xlims = (-30.0, 30.0),
+	ylims = (-30.0, 30.0),
+	aspect_ratio = 1.1
+)
+
+# ╔═╡ b1c6dc86-5a86-4d4e-8ba2-a7857b9cd1a1
+z = sol_u_matrix[:, 3]
+
+# ╔═╡ 20e4b4ec-e6b4-4186-9b9f-9bf7cc4fe15c
+vertical = z[idx]
+
+# ╔═╡ b0a4d433-6170-4a48-a795-a96e019c2e59
+p_z_t = plot(t, z,
+	legend = false,
+	title = "Lorenz System (Vertical)",
+	xaxis = "t",
+	yaxis = "Vertical (z)",
+	formatter = :plain,
+	widen = true,
+	xlims = (0.0, 100.0),
+	ylims = (-30.0, 50.0)
+)
+
+# ╔═╡ 579659a9-c2f9-4690-837c-374c8a42718e
+phase_xz = plot(x, z,
+	legend = false,
+	title = "Lorenz Attractor (Phase Space x z)",
+	xaxis = "Convection (x)",
+	yaxis = "Vertical (z)",
+	formatter = :plain,
+	widen = true,
+	xlims = (-30.0, 30.0),
+	ylims = (0.0, 50.0),
+	aspect_ratio = 1.1
+)
+
+# ╔═╡ 45487bc2-e1bf-48a0-b40c-a16408887ab9
+phase_yz = plot(y, z,
+	legend = false,
+	title = "Lorenz Attractor (Phase Space y z)",
+	xaxis = "Horizontal (y)",
+	yaxis = "Vertical (z)",
+	formatter = :plain,
+	widen = true,
+	xlims = (-30.0, 30.0),
+	ylims = (0.0, 50.0),
+	aspect_ratio = 1.1
+)
+
+# ╔═╡ aedaf78d-7e2c-41c1-ae23-186d2ee53848
+phase_xyz = plot(x, y, z,
+	legend = false,
+	title = "Lorenz Attractor (Phase Space x y z)",
+	xaxis = "Convection (x)",
+	yaxis = "Horizontal (y)",
+	zaxis = "Vertical (z)",
+	formatter = :plain,
+	widen = true,
+	xlims = (-30.0, 30.0),
+	ylims = (-30.0, 30.0),
+	zlims = (0.0, 50.0),
+	aspect_ratio = 1.1
+);
+
+# ╔═╡ 39dc0ff1-daf5-4c60-a0cf-95d96ea83fa0
+scatter!(phase_xyz,
+	(convection, horizontal, vertical),
+	color = :red,
+	markersize = 2
+)
+
+# ╔═╡ 4494b179-540b-45d4-8422-8cd81a7066f0
+p_xyz_t = plot(t, sol_u_matrix,
+	legend = (0.76, 0.15),
+	title = "Lorenz System",
+	xaxis = "t",
+	yaxis = "u",
+	labels = ["Convection (x)" "Horizontal (y)" "Vertical (z)"],
+	formatter = :plain,
+	widen = true,
+	xlims = (0.0, 100.0),
+	ylims = (-30.0, 50.0)
+)
+
+
+# ╔═╡ 761a3c43-eff6-4516-aeb4-8fa10d5f684f
+md"""
+Time (t): $(round(time; digits = 2)) |
+Convection (x): $(round(convection; digits = 2)) |
+Horizontal (y): $(round(horizontal; digits = 2)) |
+Vertical (z): $(round(vertical; digits = 2))
+"""
+
+# ╔═╡ 47ec1835-208b-44b6-a9d3-d1249ffd71c0
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2322,5 +2486,29 @@ version = "1.13.0+0"
 # ╠═f99ba4df-44e0-46c4-bd5a-8254500573ce
 # ╠═301b1245-50e6-428b-9374-d27c551a1665
 # ╠═9d356612-7723-4f12-a7e0-f2bd5922affd
+# ╠═24b50db8-e31b-464b-8351-0bf3e82cac19
+# ╠═bb64f49c-2162-49f7-8c36-19f6d3e98225
+# ╠═067a8a17-85fe-49d5-9a0d-bfd473522cd4
+# ╠═3da30832-1bb8-4dc5-83b3-b445df9df78b
+# ╠═c0c8cbe9-2f74-4a87-9b45-45e0f75ac20e
+# ╠═54e05cbd-f741-4813-9526-f39e85d0b0e5
+# ╠═44d38c04-a03f-414b-a125-2c3b0f1da543
+# ╠═33e8ad00-ee5a-4fe3-97cc-7e14fa700332
+# ╠═9019485b-1b4d-4a88-bf9d-e2ca179fd261
+# ╠═c78f7add-9741-4f81-9d3d-0e50f762a103
+# ╠═fbbaa00b-b85e-4ba0-8947-b684088c9315
+# ╠═ad7f7b1f-49c4-41bb-a253-ba3a50e956d1
+# ╠═3cb38322-9a00-40dd-99ba-008e1d07f1f8
+# ╠═5cdb7b77-070a-4b35-ab02-3e065a1d9c23
+# ╠═b1c6dc86-5a86-4d4e-8ba2-a7857b9cd1a1
+# ╠═20e4b4ec-e6b4-4186-9b9f-9bf7cc4fe15c
+# ╠═b0a4d433-6170-4a48-a795-a96e019c2e59
+# ╠═579659a9-c2f9-4690-837c-374c8a42718e
+# ╠═45487bc2-e1bf-48a0-b40c-a16408887ab9
+# ╠═aedaf78d-7e2c-41c1-ae23-186d2ee53848
+# ╠═39dc0ff1-daf5-4c60-a0cf-95d96ea83fa0
+# ╠═4494b179-540b-45d4-8422-8cd81a7066f0
+# ╠═761a3c43-eff6-4516-aeb4-8fa10d5f684f
+# ╠═47ec1835-208b-44b6-a9d3-d1249ffd71c0
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
