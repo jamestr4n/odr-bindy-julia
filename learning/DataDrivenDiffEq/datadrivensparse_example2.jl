@@ -11,8 +11,8 @@ using OrdinaryDiffEq
 using DataDrivenSparse
 using ModelingToolkitBase: @parameters
 using StableRNGs
-using Symbolics: @variables, Num
-#md using Plots
+using Symbolics: @variables
+using Plots
 #md gr()
 
 rng = StableRNG(1337)
@@ -33,8 +33,8 @@ sol = solve(prob, Tsit5(), saveat = 0.01);
 X = Array(sol) + 0.2 .* randn(rng, size(sol));
 ts = sol.t;
 
-#md plot(ts, X', color = :red)
-#md plot!(sol, color = :black)
+plot(ts, X', color = :red)
+plot!(sol, color = :black)
 
 # To estimate the system, we first create a [`DataDrivenProblem`](@ref), which requires measurement data.
 # Using a [collocation method](@ref collocation), it automatically provides the derivative and smoothes the trajectory. Control signals can be passed
@@ -46,7 +46,7 @@ prob = ContinuousDataDrivenProblem(
     p = ones(2)
 )
 
-#md plot(prob, size = (600,600))
+plot(prob, size = (600,600))
 
 # Now we infer the system structure. First we define a [`Basis`](@ref) which collects all possible candidate terms.
 # Since we want to use SINDy, we call `solve` with an [`sparsifying algorithm`](@ref sparse_algorithms), in this case [`STLSQ`](@ref) which iterates different sparsity thresholds
@@ -58,7 +58,7 @@ u = collect(u)
 c = collect(c)
 w = collect(w)
 
-h = Num[sin.(w[1] .* u[1]); cos.(w[2] .* u[1]); polynomial_basis(u, 5); c]
+h = [sin.(w[1] .* u[1]); cos.(w[2] .* u[1]); polynomial_basis(u, 5); c]
 
 basis = Basis(h, u, parameters = w, controls = c);
 println(basis) # hide
@@ -73,7 +73,7 @@ res = solve(
     prob, basis, opt,
     options = DataDrivenCommonOptions(data_processing = sampler, digits = 1)
 )
-#src println(res) #hide
+println(res)
 
 # !!! info
 #     A more detailed description of the result can be printed via `print(res, Val{true})`, which also includes the discovered equations and parameter values.
@@ -89,9 +89,9 @@ println(params) # hide
 
 # And a visual check of the result can be performed by plotting the result
 
-#md plot(
-#md     plot(prob), plot(res), layout = (1,2)
-#md )
+plot(
+    plot(prob), plot(res), layout = (1,2)
+)
 
 #md # ## [Copy-Pasteable Code](@id autoregulation_copy_paste)
 #md #
