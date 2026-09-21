@@ -1,6 +1,6 @@
 ## Note
 
-This is an early Julia port. The reference implementation is
+The reference implementation is
 [ODR-BINDy](https://github.com/llfung/ODR-BINDy) in MATLAB, which is more mature
 and is what the published results were produced with. Go check it out!
 
@@ -76,7 +76,7 @@ MATLAB implementation.
 
 Documentation contributions are welcome. Get in touch!
 
-## Not yet implemented
+## Future Work
 
 The success-rate benchmarks from the paper have not been reproduced in Julia
 yet, and there is no test suite or CI. Also planned: `DataDrivenDiffEq.jl`
