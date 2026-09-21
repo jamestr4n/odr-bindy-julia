@@ -58,7 +58,7 @@ yet registered, so install from this repository:
 
 ```julia
 julia> ]
-pkg> add https://github.com/YOUR-USERNAME/odr-bindy-julia
+pkg> add https://github.com/jamestr4n/odr-bindy-julia
 ```
 
 ## Documentation
@@ -94,14 +94,6 @@ selection, but a much faster linear-regression-based technique. There is also
 systems, which runs without a MATLAB license.
 
 ## Note on dependency and license
+This package has no dependencies outside the Julia standard library.
 
-The algorithm, the method and the reference implementation are the work of
-L. Fung. This repository is a reimplementation in Julia and does not modify the
-original.
-
-The MATLAB implementation reproduces some utility files (`SparseGalerkin.m`,
-`poolData.m`, `poolDataList.m`) from
-[SINDy](https://doi.org/10.1073/pnas.1517384113) by Brunton, Proctor & Kutz
-(2016, PNAS) under the permission of the original authors. No code from those
-files is reproduced here; the equivalent functionality was written independently
-for this port. Please refer to `LICENSE` for the full attribution.
+The algorithm and the reference MATLAB implementation are the work of L. Fung. This is an independent reimplementation in Julia; no source code from the original is reproduced here. Both are released under the MIT License — see LICENSE.
