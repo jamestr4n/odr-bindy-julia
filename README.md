@@ -35,7 +35,7 @@ using ODRBINDy
 lib = PolynomialLibrary(3, 2; varnames = ["x", "y", "z"])   # candidate terms
 IMat, DMat = finite_difference_matrices(size(X, 1), 6, dt)  # discretisation
 hyper = ODRHyperParameters(sigma_x = 0.2 * std(vec(X)),     # noise beliefs
-                           sigma_y = 1e-4, sigma_p = 1e2,
+                           sigma_y = 1e-2, sigma_p = 1e2,
                            Nx = size(X, 1), Neq = size(IMat, 1),
                            M = nterms(lib), D = 3)
 
@@ -43,13 +43,17 @@ res = odr_bindy(ODRProblem(X, lib, IMat, DMat, hyper))
 print_model(res, lib)
 ```
 
-From Lorenz63 data at 20% noise, this recovers:
+From Lorenz63 data at 20% noise (`examples/lorenz.jl`, 500 samples at
+`dt = 0.01`), this recovers the exact 7-term support:
 
 ```
-dx/dt = -10.0027 * x + 9.9984 * y
-dy/dt = 27.9931 * x - 0.9987 * y - 0.9999 * x*z
-dz/dt = -2.6661 * z + 1.0001 * x*y
+dx/dt = -9.8667 * x + 9.9345 * y
+dy/dt = 27.7867 * x - 0.9967 * y - 0.9933 * x*z
+dz/dt = -2.6803 * z + 0.9956 * x*y
 ```
+
+against a truth of `-10, 10, 28, -1, -1, -8/3, 1`, while denoising the
+trajectory from an RMS error of 1.62 down to 0.16.
 
 ### Installation
 
