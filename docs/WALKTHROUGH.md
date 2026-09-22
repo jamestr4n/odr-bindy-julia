@@ -576,7 +576,26 @@ $$\left(J^\top J + \lambda\,\mathrm{diag}(J^\top J)\right)\delta = -J^\top r$$
 - $\lambda \to \infty$: the step shrinks and rotates toward $-J^\top r$, the
   gradient — small, cautious steps.
 
-$\lambda$ adapts: shrink it when a step succeeds, grow it when one fails.
+$\lambda$ adapts: shrink it when a step succeeds, grow it when one fails. The
+naive version of that is a fixed factor — divide by 3 on success, multiply by 3
+on failure. It is one line, and on this problem it *oscillates*: accept, reject,
+accept, reject, with $\lambda$ pinned and the cost crawling down by a fraction
+of a percent per iteration. The residual blocks are weighted by $1/\sigma_x$ and
+$1/\sigma_{\partial t}$, which differ by orders of magnitude, so a single fixed
+factor is right for neither.
+
+So we use the **Nielsen–Madsen gain ratio** instead: compare the reduction the
+step actually achieved against the one the damped linear model *predicted*,
+
+$$
+ho=rac{C-C_{	ext{new}}}{	frac12\,\delta^	op(\lambda D\delta-g)}$$
+
+and let that set the new $\lambda$. $
+hopprox1$ means the quadratic model is
+trustworthy here, so drop the damping sharply; $
+ho$ barely positive means it is
+not, so drop it barely. Failures grow $\lambda$ geometrically ($	imes2$,
+$	imes4$, $	imes8$, ...) so a bad region is escaped quickly.
 
 ```julia
 J = fJ(z)
@@ -585,11 +604,15 @@ H = J' * J
 F = cholesky(Symmetric(H + lambda * Diagonal(dH)))
 delta = -(F \ g)
 
-if Cnew < C
+pred = dot(delta, lambda .* dH .* delta .- g) / 2   # predicted reduction
+rho  = pred > 0 ? (C - Cnew) / pred : -1.0
+
+if isfinite(Cnew) && rho > 0
     z, r, C = znew, rnew, Cnew
-    lambda = max(lambda / 3, 1e-12)      # that worked — be bolder
+    lambda = max(lambda * max(1/3, 1 - (2rho - 1)^3), 1e-12)   # trust it more
+    nu = 2.0
 else
-    lambda *= 3                          # that failed — be more careful
+    lambda *= nu; nu *= 2                                      # back off, faster
 end
 ```
 
@@ -750,12 +773,19 @@ Note `res.converged || return ...`: reading as "converged, *or else* return".
 Non-convergence yields evidence $\infty$, which the greedy loop reads as "don't
 remove that term" (section 2.6).
 
-The `X0` argument is **warm starting** — paper §2.3 point 2: "the outcome
-$(X,\Xi)$ from the preceding iteration with more terms is typically a reliable
-initial guess for the next nonlinear optimisation." The denoised states barely
-change when you delete one term, so starting from the previous model's $X$ means
-converging in a handful of iterations instead of a hundred. This is the single
-biggest speedup in the algorithm.
+The `X0` and `xi0` arguments are **warm starting** — paper §2.3 point 2: "the
+outcome $(X,\Xi)$ from the preceding iteration with more terms is typically a
+reliable initial guess for the next nonlinear optimisation." Note the paper says
+$(X,\Xi)$, *both*: neither the denoised states nor the surviving coefficients
+change much when you delete one term. Passing both means a trial converges in a
+handful of iterations instead of hundreds. This is the single biggest speedup in
+the algorithm, and it is what makes the tight `lm_maxiter` of section 2.6 a
+meaningful test rather than a guaranteed failure — with a cold `xi0` every trial
+exhausts its budget, scores $\infty$, and no term is ever removed.
+
+`xi0` defaults to `nothing`, which falls back to the bootstrap of section 2.5.
+That is the right behaviour for the initial full-library fit, which has no
+preceding model to inherit from.
 
 `fit_model_multistart` runs several independent bootstrap starts and keeps the
 best. Used only for the initial full-library fit, where there's no previous
@@ -775,7 +805,9 @@ while count(mask) > D && rises < opts.stop_after_rises
     for i in findall(vec(mask))                    # every currently active term
         trial = copy(mask); trial[i] = false       # try deleting it
         all(any(trial; dims = 1)) || continue      # each state keeps >= 1 term
-        f = fit_model(prob, trial, opts; X0 = current.X, maxiter = opts.lm_maxiter)
+        f = fit_model(prob, trial, opts; X0 = current.X,        # warm start: X
+                      xi0 = current.Xi[trial],                 # and Xi
+                      maxiter = opts.lm_maxiter)
         if f.nlevidence < cand_fit.nlevidence      # best deletion so far?
             cand_fit = f; cand_mask = trial
         end
