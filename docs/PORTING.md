@@ -90,10 +90,15 @@ The `log(2*pi)` terms in the log-evidence cancel exactly, leaving
 Not tuned — each is a stated belief:
 
 - `sigma_x`: measurement noise std. Estimate from the data or from the sensor.
-- `sigma_y`: discretisation truncation error, plus any stochastic forcing.
-  `1e-4` works for order-6 FD at `dt = 0.01`. If the truncation error varies
-  over the trajectory, pass a full `Neq x D` matrix (the MATLAB
-  `NonlinearOscillator.m` uses a decaying `sigma_y` this way).
+- `sigma_y`: discretisation truncation error, plus any stochastic forcing, plus
+  slack. Keep it comfortably *above* the truncation error, not equal to it:
+  `1e-2` for order-6 FD at `dt = 0.01` on Lorenz, where the measured truncation
+  error is ~2e-4 RMS. Shrinking `sigma_y` towards that figure turns the soft
+  model constraint back into a nearly hard one and the optimisation goes stiff,
+  which is the failure mode paper eq. (6) exists to avoid; in practice the
+  greedy search then stalls with every trial hitting its iteration cap. If the
+  truncation error varies over the trajectory, pass a full `Neq x D` matrix (the
+  MATLAB `NonlinearOscillator.m` uses a decaying `sigma_y` this way).
 - `sigma_p`: prior std on coefficients. Large (`1e2`) = weakly informative.
   It does real work in the evidence, via the `sum(log sigma_p)` Occam term.
 
