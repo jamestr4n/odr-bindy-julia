@@ -78,6 +78,14 @@ H_red = Hpp - Hxp' * Hxx^{-1} * Hxp
 hence `J` has full column rank, `J'J` is positive definite, and `H_red` is too.
 The MATLAB `while any(eig(Hessian_p) < 0)` retry loop has no counterpart here.
 
+This is *not* numerically identical to `d2Jdp2_GaussNewtonEst.m`. The MATLAB
+version computes `dX*/dXi` from the full Hessian in `X` (its `LHS` includes a
+residual-weighted second-derivative term, and its `RHS` a residual-weighted
+`dTheta` term) and only then forms the Gauss–Newton outer product. Here both
+are Gauss–Newton, so the log-evidence differs from MATLAB's by a term that
+scales with the model residual. Paper fig. 11 suggests the choice of Hessian
+barely changes success rates, but per-step evidences will not match exactly.
+
 The `log(2*pi)` terms in the log-evidence cancel exactly, leaving
 
 ```
@@ -95,12 +103,31 @@ Not tuned — each is a stated belief:
   `1e-2` for order-6 FD at `dt = 0.01` on Lorenz, where the measured truncation
   error is ~2e-4 RMS. Shrinking `sigma_y` towards that figure turns the soft
   model constraint back into a nearly hard one and the optimisation goes stiff,
-  which is the failure mode paper eq. (6) exists to avoid; in practice the
-  greedy search then stalls with every trial hitting its iteration cap. If the
+  which is the failure mode paper eq. (6) exists to avoid. The paper itself
+  uses `1e-3`, and at that value the default solver settings stall (see
+  *Differences from the MATLAB implementation* below): use
+  `ODROptions(lm_damping = :levenberg, lm_maxiter_refine = 16000)`. If the
   truncation error varies over the trajectory, pass a full `Neq x D` matrix (the
   MATLAB `NonlinearOscillator.m` uses a decaying `sigma_y` this way).
 - `sigma_p`: prior std on coefficients. Large (`1e2`) = weakly informative.
   It does real work in the evidence, via the `sum(log sigma_p)` Occam term.
+
+## Differences from the MATLAB implementation
+
+Found while reproducing paper fig. 4 (`benchmarks/lorenz_paper.jl`). Each is a
+deliberate or accidental difference in behaviour, not in the model.
+
+| # | MATLAB | this package | effect |
+|---|---|---|---|
+| 1 | Noise % = `sigma_x / std(X_clean(:))`, one scalar pooled over all states | `examples/lorenz.jl` uses each state's own std | The example's "20%" is ~12–14% by the paper's definition. Benchmarks use the paper's. |
+| 2 | `lsqnonlin`, trust-region-reflective, no variable scaling | Levenberg–Marquardt with Marquardt scaling `diag(J'J)` by default | At `sigma_y = 1e-3` Marquardt scaling over-damps the directions that move the trajectory along the ODE (curvature ~`1/sigma_x^2`, while `diag(J'J)` is ~`1/sigma_y^2`), so nearly every greedy trial hits its 100-step cap and no term can be removed. Fixed by the opt-in `lm_damping = :levenberg`. |
+| 3 | Initial fit: 4 to 16 attempts, iteration cap doubling from 1000; later refits inherit the doubled cap (≥16000) | `n_multistart` attempts, fixed `lm_maxiter_refine = 1000` | At `sigma_y = 1e-3` the 30-term fit needs ~2000 steps, so the default cap fails every run. Pass `lm_maxiter_refine = 16000`. |
+| 4 | Trial coefficients re-regressed on the warm-start `X` (`LinUseDenoise`) | Previous model's coefficients, one zeroed | Opt-in `trial_xi_init = :regress` gives the MATLAB behaviour. Not yet shown to change success rates. |
+| 5 | Evidence: `dX/dXi` from the full `X`-Hessian | Pure Gauss–Newton Schur complement | Per-step `-log(E)` differs slightly; see *Why the Hessian collapsed*. |
+| 6 | After a removal, keeps the lower of the refit and the trial; retries failed refits (`MaxFailedRun`) | Takes the refit whenever it is finite; no retry | Can change which model is kept at a step. |
+| 7 | Rises in `-log(E)` counted from the 3rd removal on | Counted from the 1st | Can stop the search earlier. |
+| 8 | Final model chosen among the reduced models only | The full library is also a candidate | Only matters if no removal ever improves the evidence. |
+| 9 | Bootstrap: 1000 resamples for full fits and refits, 100 for trials | 100 throughout | Starting points differ; random streams differ anyway. |
 
 ## Roadmap (project aim 2)
 
