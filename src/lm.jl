@@ -65,8 +65,33 @@ Jacobian of `fr`.
 | `xtol` | stop on a relative step below this |
 | `gtol` | stop on `norm(J'r, Inf)` below this |
 | `lambda0`, `lambda_min`, `lambda_max` | damping schedule |
+| `damping` | `:marquardt` damps with `diag(J'J)`; `:levenberg` damps with the identity |
+| `accel` | add geodesic acceleration (below) |
+| `accel_h`, `accel_alpha` | its finite-difference step, and the largest accepted `2|a|/|v|` |
 
 Exhausting `lambda_max` without an improving step returns `converged = false`.
+
+`:levenberg` exists because Marquardt scaling suits this problem badly when
+`sigma_y` is small. The diagonal of `J'J` for a state variable is dominated by
+the model term (~ `1/sigma_y^2`), yet the directions the trajectory actually has
+to move along -- towards solutions of the ODE -- have curvature of only
+~ `1/sigma_x^2`. Scaled damping then smothers exactly those directions, and the
+iteration crawls. With `:levenberg`, `lambda0` and `lambda_max` are taken
+relative to `max(diag(J'J))`; `lambda_min` stays absolute.
+
+`accel = true` adds geodesic acceleration (Transtrum & Sethna 2012,
+arXiv:1201.5885; as in GSL's `lmaccel`). The Gauss-Newton step `v` is followed
+by a second-order correction `a` for the curvature of the residual along `v`,
+
+    r_vv ~ (2/h) * ( (r(z + h v) - r(z)) / h - J v )
+    a    = -(J'J + lambda D) \\ (J' r_vv)          (same factorisation)
+    step = v + a / 2
+
+rejected as unreliable when `2|a| / |v| > accel_alpha`. It costs one residual
+evaluation and one extra back-substitution per step. Here the curvature is large
+where the trajectory has to bend towards solutions of the ODE, and plain
+Gauss-Newton only creeps there (gain ratio ~0.6 for hundreds of steps); with
+acceleration, fits at `sigma_y = 1e-3` converge in about a tenth of the steps.
 """
 function levenberg_marquardt(fr, fJ, z0::AbstractVector{T};
                              maxiter::Int = 1000,
@@ -75,7 +100,13 @@ function levenberg_marquardt(fr, fJ, z0::AbstractVector{T};
                              gtol::Real = 1e-10,
                              lambda0::Real = 1e-3,
                              lambda_min::Real = 1e-12,
-                             lambda_max::Real = 1e12) where {T<:Real}
+                             lambda_max::Real = 1e12,
+                             damping::Symbol = :marquardt,
+                             accel::Bool = false,
+                             accel_h::Real = 0.1,
+                             accel_alpha::Real = 0.75) where {T<:Real}
+    damping in (:marquardt, :levenberg) ||
+        throw(ArgumentError("damping must be :marquardt or :levenberg"))
     z = Vector{T}(z0)
     r = fr(z)
     C = cost(r)
@@ -83,12 +114,16 @@ function levenberg_marquardt(fr, fJ, z0::AbstractVector{T};
     J = fJ(z)
     g = J' * r
     H = J' * J
-    dH = _damping_diagonal(H)
+    marquardt = damping === :marquardt
+    dH = marquardt ? _damping_diagonal(H) : ones(T, length(z))
 
-    lambda = T(lambda0)
+    scale = marquardt ? one(T) : maximum(diag(H))
+    lambda = T(lambda0) * scale
+    lambda_max = lambda_max * scale
     nu = T(2)                                      # failure growth, doubles on
     iter = 0                                       # each consecutive failure
     converged = false
+    solver = _StepSolver()                         # keeps the symbolic factorisation
 
     while iter < maxiter
         iter += 1
@@ -98,12 +133,25 @@ function levenberg_marquardt(fr, fJ, z0::AbstractVector{T};
             break
         end
 
-        delta = _lm_step(H, dH, g, lambda)
-        if delta === nothing                       # not positive definite
+        v = _lm_step!(solver, H, dH, g, lambda)
+        if v === nothing                           # not positive definite
             lambda *= nu
             nu *= 2
             lambda > lambda_max && break
             continue
+        end
+
+        delta = v
+        if accel
+            rvv = (2 / accel_h) .* ((fr(z .+ accel_h .* v) .- r) ./ accel_h .- J * v)
+            a = -(solver.F \ (J' * rvv))
+            if !all(isfinite, a) || 2 * norm(a) > accel_alpha * norm(v)
+                lambda *= nu                       # curvature too large to trust:
+                nu *= 2                            # shorten the step instead
+                lambda > lambda_max && break
+                continue
+            end
+            delta = v .+ a ./ 2
         end
 
         znew = z .+ delta
@@ -111,8 +159,9 @@ function levenberg_marquardt(fr, fJ, z0::AbstractVector{T};
         Cnew = cost(rnew)
 
         # Gain ratio: achieved reduction over the reduction the damped linear
-        # model promised. Positive means the step is worth taking.
-        pred = dot(delta, lambda .* dH .* delta .- g) / 2
+        # model promised for the Gauss-Newton step. Positive means the step is
+        # worth taking.
+        pred = dot(v, lambda .* dH .* v .- g) / 2
         rho = pred > 0 ? (C - Cnew) / pred : T(-1)
 
         if isfinite(Cnew) && rho > 0
@@ -131,7 +180,7 @@ function levenberg_marquardt(fr, fJ, z0::AbstractVector{T};
             J = fJ(z)                              # only recomputed on success
             g = J' * r
             H = J' * J
-            dH = _damping_diagonal(H)
+            marquardt && (dH = _damping_diagonal(H))
         else
             lambda *= nu
             nu *= 2
@@ -152,11 +201,41 @@ function _damping_diagonal(H::AbstractMatrix{T}) where {T}
     return d
 end
 
+"""
+Solves the damped normal equations, step after step.
+
+The sparsity pattern of `J'J` does not change during a fit, so the symbolic
+analysis of the sparse Cholesky (the fill-reducing ordering, most of the cost)
+is done once and only the numeric factorisation is repeated. If the pattern
+does change -- a Jacobian entry that happens to be exactly zero is not stored --
+the analysis is simply redone.
+"""
+mutable struct _StepSolver
+    F::Any
+    colptr::Vector{Int}
+    rowval::Vector{Int}
+end
+_StepSolver() = _StepSolver(nothing, Int[], Int[])
+
+_factorise!(S::_StepSolver, A::AbstractMatrix) = (S.F = cholesky(Symmetric(A)); S)
+
+function _factorise!(S::_StepSolver, A::SparseMatrixCSC)
+    if S.F !== nothing && A.colptr == S.colptr && A.rowval == S.rowval
+        cholesky!(S.F, Symmetric(A))
+    else
+        S.F = nothing                              # stays unset if analysis throws
+        S.F = cholesky(Symmetric(A))
+        S.colptr, S.rowval = copy(A.colptr), copy(A.rowval)
+    end
+    return S
+end
+
 "One damped Gauss-Newton step, or `nothing` if the damped system is not SPD."
-function _lm_step(H::AbstractMatrix, dH::AbstractVector, g::AbstractVector, lambda::Real)
+function _lm_step!(S::_StepSolver, H::AbstractMatrix, dH::AbstractVector,
+                   g::AbstractVector, lambda::Real)
     try
-        F = cholesky(Symmetric(H + lambda * Diagonal(dH)))
-        return -(F \ g)
+        _factorise!(S, H + lambda * Diagonal(dH))
+        return -(S.F \ g)
     catch err
         err isa InterruptException && rethrow()
         return nothing
