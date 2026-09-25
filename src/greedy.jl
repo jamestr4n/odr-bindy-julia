@@ -80,8 +80,12 @@ function odr_bindy(prob::ODRProblem{L,T}, opts::ODROptions = ODROptions()) where
             # Paper section 2.3 point 2: the preceding, larger model's (X, Xi) is a
             # reliable initial guess, so a trial converges in a handful of steps
             # -- and a trial missing a necessary term conspicuously does not.
+            # `:regress` (the MATLAB behaviour) re-runs the bootstrap ridge on the
+            # warm-start X instead, so the surviving terms can absorb the removed
+            # one at once -- which matters when terms are nearly collinear.
             X0 = opts.warm_start ? current.X : prob.Xdata
-            xi0 = opts.warm_start ? current.Xi[trial] : nothing
+            xi0 = opts.warm_start && opts.trial_xi_init === :previous ?
+                current.Xi[trial] : nothing
             f = fit_model(prob, trial, opts; X0 = X0, xi0 = xi0,
                           maxiter = opts.lm_maxiter)
 
