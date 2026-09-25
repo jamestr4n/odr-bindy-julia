@@ -68,7 +68,8 @@ function fit_model(prob::ODRProblem{L,T}, mask::AbstractMatrix{Bool},
 
     z0 = vcat(vec(Matrix{T}(X0)), Vector{T}(xistart))
     res = levenberg_marquardt(fr, fJ, z0; maxiter = maxiter,
-                              ftol = opts.ftol, xtol = opts.xtol, gtol = opts.gtol)
+                              ftol = opts.ftol, xtol = opts.xtol, gtol = opts.gtol,
+                              damping = opts.lm_damping, accel = opts.lm_accel)
 
     X, xi = unpack(prob, res.z)
     Xi = zeros(T, prob.M, prob.D)
