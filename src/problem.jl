@@ -44,7 +44,10 @@ end
 | `bragging` | median (`true`) rather than mean (`false`) over bootstrap samples |
 | `lm_maxiter` | LM iteration cap during greedy trials (deliberately tight: a trial that will not converge is evidence the term is needed) |
 | `lm_maxiter_refine` | iteration cap for the full fit and post-removal refinement |
+| `lm_damping` | `:marquardt` (default) or `:levenberg`; see [`levenberg_marquardt`](@ref). Use `:levenberg` for small `sigma_y` |
+| `lm_accel` | geodesic acceleration in the LM solver; ~10x fewer steps at small `sigma_y` |
 | `warm_start` | seed each trial with the previous model's denoised `X` |
+| `trial_xi_init` | trial coefficients: `:previous` (default) reuses the previous model's; `:regress` re-fits them by bootstrap ridge on the warm-start `X`, as MATLAB does |
 | `stop_after_rises` | stop after this many consecutive drops in evidence |
 | `verbose` | 0 silent, 1 per removal, 2 per trial |
 """
@@ -54,10 +57,13 @@ Base.@kwdef mutable struct ODROptions
     bragging::Bool = true
     lm_maxiter::Int = 100
     lm_maxiter_refine::Int = 1000
+    lm_damping::Symbol = :marquardt
+    lm_accel::Bool = false
     ftol::Float64 = 5e-8
     xtol::Float64 = 1e-12
     gtol::Float64 = 1e-10
     warm_start::Bool = true
+    trial_xi_init::Symbol = :previous
     refine_after_removal::Bool = true
     stop_after_rises::Int = 2
     verbose::Int = 1
