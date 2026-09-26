@@ -17,6 +17,21 @@ assimilation. There is no sparsity threshold to tune.
 Julia port of [ODR-BINDy](https://github.com/llfung/ODR-BINDy) by L. Fung, the
 code for [this article](https://doi.org/10.1145/3831701).
 
+![ODR-BINDy recovering the Lorenz63 system from data with 20% noise](docs/images/lorenz_fig4_top.png)
+
+Lorenz63 from 500 samples with 20% noise (red), the settings of the paper's
+Fig. 4. ODR-BINDy recovers the exact model,
+
+```
+dx/dt = -9.7203 * x + 9.7768 * y
+dy/dt = 29.1935 * x - 1.2826 * y - 1.02 * x*z
+dz/dt = -2.6546 * z + 0.9967 * x*y
+```
+
+and its denoised trajectory (dashed blue) sits on the truth (black), cutting
+the RMS error from 2.58 to 0.38. Reproduce it with
+[`examples/figures/lorenz_fig4_top.jl`](examples/figures/lorenz_fig4_top.jl).
+
 ## Using the code
 
 ### Getting started
