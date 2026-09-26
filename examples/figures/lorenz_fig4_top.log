@@ -1,0 +1,41 @@
+Lorenz63: N = 500, dt = 0.01, noise = 20% (sigma_x = 2.5542)
+
+full library: 30 terms
+  Np = 30   -log(E) = 958.843
+  Np = 29   -log(E) = 950.941       removed z^2 from dz/dt
+  Np = 28   -log(E) = 943.577       removed y*z from dz/dt
+  Np = 27   -log(E) = 935.777       removed x*z from dz/dt
+  Np = 26   -log(E) = 928.547       removed y*z from dx/dt
+  Np = 25   -log(E) = 921.328       removed y^2 from dz/dt
+  Np = 24   -log(E) = 914.097       removed z^2 from dy/dt
+  Np = 23   -log(E) = 906.635       removed x*z from dx/dt
+  Np = 22   -log(E) = 899.393       removed y^2 from dy/dt
+  Np = 21   -log(E) = 892.22        removed z^2 from dx/dt
+  Np = 20   -log(E) = 885.028       removed x^2 from dz/dt
+  Np = 19   -log(E) = 878.046       removed x*y from dy/dt
+  Np = 18   -log(E) = 869.77        removed x^2 from dy/dt
+  Np = 17   -log(E) = 863.267       removed x^2 from dx/dt
+  Np = 16   -log(E) = 856.33        removed y^2 from dx/dt
+  Np = 15   -log(E) = 848.403       removed x*y from dx/dt
+  Np = 14   -log(E) = 841.542       removed z from dy/dt
+  Np = 13   -log(E) = 834.465       removed y from dz/dt
+  Np = 12   -log(E) = 827.634       removed z from dx/dt
+  Np = 11   -log(E) = 821.199       removed x from dz/dt
+  Np = 10   -log(E) = 815.761       removed y*z from dy/dt
+  Np =  9   -log(E) = 810.031       removed 1 from dy/dt
+  Np =  8   -log(E) = 805.466       removed 1 from dx/dt
+  Np =  7   -log(E) = 803.851       removed 1 from dz/dt
+  Np =  6   -log(E) = 818.095       removed y from dy/dt   (evidence rose, 1/2)
+selected 7 terms, -log(E) = 803.851
+
+elapsed: 353.2 s
+
+discovered:
+dx/dt = -9.7203 * x + 9.7768 * y
+dy/dt = 29.1935 * x - 1.2826 * y - 1.02 * x*z
+dz/dt = -2.6546 * z + 0.9967 * x*y
+
+support recovered exactly: yes
+state RMSE: data 2.583 -> denoised 0.377
+
+written: C:\Users\j4mes\repos\odr-bindy-julia\docs\images\lorenz_fig4_top.png
