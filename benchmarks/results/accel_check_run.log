@@ -1,0 +1,10 @@
+Lorenz63, paper settings: signal std = 12.753, sigma_y = 0.001, 2 threads
+2 trials to run (0 already done)
+[   1/2     615s]  T=10 noise=0.200 trial=38   ok    (7 terms, 604s)
+[   2/2     650s]  T=10 noise=0.200 trial=24   ok    (7 terms, 640s)
+Precompiling packages...
+   1714.1 ms  ✓ ODRBINDy (serial)
+  1 dependency successfully precompiled in 2 seconds
+┌ Warning: The call to compilecache failed to create a usable precompiled cache file for ODRBINDy [b3c1a7e2-5d4f-4a9e-8c31-0f2d6a7b9e41]
+│   exception = Required dependency Base.PkgId(Base.UUID("10745b16-79ce-11e8-11f9-7d13ad32a3b2"), "Statistics") failed to load from a cache file.
+└ @ Base loading.jl:2701

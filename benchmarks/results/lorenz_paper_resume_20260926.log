@@ -1,0 +1,55 @@
+﻿julia : Precompiling packages...
+At line:1 char:302
++ ... tch {} } }; julia --project=. -t 14 benchmarks/lorenz_paper.jl --T 10 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Precompiling packages...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   2175.8 ms  ✓ ODRBINDy (serial)
+  1 dependency successfully precompiled in 3 seconds
+┌ Warning: The call to compilecache failed to create a usable precompiled cache file for ODRBINDy 
+[b3c1a7e2-5d4f-4a9e-8c31-0f2d6a7b9e41]
+│   exception = Required dependency Base.PkgId(Base.UUID("10745b16-79ce-11e8-11f9-7d13ad32a3b2"), "Statistics") failed 
+to load from a cache file.
+└ @ Base loading.jl:2701
+Lorenz63, paper settings: signal std = 12.753, sigma_y = 0.001, 14 threads
+39 trials to run (153 already done)
+[   1/39    2296s]  T=10 noise=0.200 trial=23   ok    (7 terms, 2290s)
+[   2/39    2355s]  T=10 noise=0.200 trial=47   ok    (7 terms, 2349s)
+[   3/39    2356s]  T=10 noise=0.100 trial=14   ok    (7 terms, 2351s)
+[   4/39    2378s]  T=10 noise=0.300 trial=4    ok    (7 terms, 2372s)
+[   5/39    2384s]  T=10 noise=0.100 trial=28   ok    (7 terms, 2379s)
+[   6/39    2392s]  T=10 noise=0.200 trial=9    ok    (7 terms, 2386s)
+[   7/39    2425s]  T=10 noise=0.100 trial=60   ok    (7 terms, 2420s)
+[   8/39    2436s]  T=10 noise=0.300 trial=55   ok    (7 terms, 2430s)
+[   9/39    2477s]  T=10 noise=0.200 trial=37   ok    (7 terms, 2471s)
+[  10/39    2510s]  T=10 noise=0.300 trial=41   ok    (7 terms, 2504s)
+[  11/39    2535s]  T=10 noise=0.300 trial=42   ok    (7 terms, 2529s)
+[  12/39    2564s]  T=10 noise=0.300 trial=18   ok    (7 terms, 2558s)
+[  13/39    2578s]  T=10 noise=0.200 trial=64   ok    (7 terms, 2572s)
+[  14/39    2657s]  T=10 noise=0.300 trial=32   ok    (7 terms, 2652s)
+[  15/39    3807s]  T=10 noise=0.200 trial=51   ok    (7 terms, 1453s)
+[  16/39    3881s]  T=10 noise=0.300 trial=23   ok    (7 terms, 1585s)
+[  17/39    4005s]  T=10 noise=0.200 trial=14   ok    (7 terms, 1649s)
+[  18/39    4022s]  T=10 noise=0.100 trial=5    ok    (7 terms, 1644s)
+[  19/39    4031s]  T=10 noise=0.100 trial=19   ok    (7 terms, 1467s)
+[  20/39    4101s]  T=10 noise=0.300 trial=9    ok    (7 terms, 1710s)
+[  21/39    4104s]  T=10 noise=0.100 trial=42   ok    (7 terms, 1594s)
+[  22/39    4127s]  T=10 noise=0.200 trial=60   ok    (7 terms, 1701s)
+[  23/39    4135s]  T=10 noise=0.100 trial=56   ok    (7 terms, 1700s)
+[  24/39    4140s]  T=10 noise=0.200 trial=28   ok    (7 terms, 1756s)
+[  25/39    4266s]  T=10 noise=0.100 trial=33   ok    (7 terms, 1608s)
+[  26/39    4381s]  T=10 noise=0.300 trial=46   ok    (7 terms, 1846s)
+[  27/39    4410s]  T=10 noise=0.300 trial=37   ok    (7 terms, 1933s)
+[  28/39    4451s]  T=10 noise=0.300 trial=64   ok    (7 terms, 1874s)
+[  29/39    5073s]  T=10 noise=0.300 trial=51   ok    (7 terms, 1266s)
+[  30/39    5161s]  T=10 noise=0.100 trial=24   ok    (7 terms, 1279s)
+[  31/39    5233s]  T=10 noise=0.200 trial=19   ok    (7 terms, 1202s)
+[  32/39    5797s]  T=10 noise=0.300 trial=14   ok    (7 terms, 1792s)
+[  33/39    5797s]  T=10 noise=0.100 trial=10   ok    (7 terms, 1696s)
+[  34/39    5819s]  T=10 noise=0.200 trial=5    ok    (7 terms, 1797s)
+[  35/39    5851s]  T=10 noise=0.200 trial=42   ok    (7 terms, 1747s)
+[  36/39    5896s]  T=10 noise=0.300 trial=28   ok    (7 terms, 1756s)
+[  37/39    5912s]  T=10 noise=0.100 trial=38   ok    (7 terms, 1502s)
+[  38/39    5917s]  T=10 noise=0.200 trial=33   ok    (7 terms, 1651s)
+[  39/39    5921s]  T=10 noise=0.100 trial=47   ok    (7 terms, 1540s)

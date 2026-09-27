@@ -1,0 +1,8 @@
+Lorenz63, paper settings: signal std = 12.753, sigma_y = 0.001, 14 threads
+192 trials to run (0 already done)
+[   1/192    1974s]  T=10 noise=0.200 trial=24   FAIL  (26 terms, 1964s)
+[   2/192    2515s]  T=10 noise=0.200 trial=38   FAIL  (23 terms, 2506s)
+[   3/192    2820s]  T=10 noise=0.100 trial=1    ok    (7 terms, 2810s)
+[   4/192    2889s]  T=10 noise=0.100 trial=29   ok    (7 terms, 2880s)
+[   5/192    3054s]  T=10 noise=0.100 trial=15   ok    (7 terms, 3045s)
+[   6/192    6605s]  T=10 noise=0.300 trial=19   FAIL  (17 terms, 6595s)

@@ -1,0 +1,4 @@
+T,noise,sigma_y,trials,successes,success_rate,ci_low,ci_high,paper_success_rate,agrees,median_model_error,median_rms_data,median_rms_denoised,median_runtime_s
+10,0.100,0.001,64,64,1.0000,0.9434,1.0000,1.00,yes,0.007751,1.281,0.1184,2449.9
+10,0.200,0.001,64,64,1.0000,0.9434,1.0000,1.00,yes,0.0154,2.563,0.2364,2558.2
+10,0.300,0.001,64,62,0.9688,0.8930,0.9914,0.90,yes,0.02343,3.844,0.3574,2834.2

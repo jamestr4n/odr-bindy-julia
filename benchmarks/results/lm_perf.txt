@@ -1,0 +1,28 @@
+
+## baseline (busy machine)  (julia 1.12.6, znver3, N = 1000, 3030 unknowns)
+  residual                         0.18 ms      0.54 MiB
+  jacobian                         6.13 ms     10.24 MiB
+  J'J                              4.43 ms     10.66 MiB
+  cholesky(J'J + lambda I)        25.84 ms     22.87 MiB
+  LM step (marquardt)             41.56 ms     45.06 MiB
+  LM step (levenberg)             40.41 ms     44.96 MiB
+
+## after: symbolic Cholesky reuse (idle machine)  (julia 1.12.6, znver3, N = 1000, 3030 unknowns)
+  residual                         0.35 ms      0.54 MiB
+  jacobian                         5.65 ms     10.24 MiB
+  J'J                              4.71 ms     10.66 MiB
+  cholesky(J'J + lambda I)        22.74 ms     22.87 MiB
+  LM step (marquardt)             24.05 ms     34.57 MiB
+  LM step (levenberg)             22.09 ms     34.46 MiB
+
+## after: Cholesky reuse + geodesic acceleration (idle machine)  (julia 1.12.6, znver3, N = 1000, 3030 unknowns)
+  residual                         0.17 ms      0.54 MiB
+  jacobian                         6.45 ms     10.24 MiB
+  J'J                              4.31 ms     10.66 MiB
+  cholesky(J'J + lambda I)        26.36 ms     22.87 MiB
+  LM step (marquardt)             23.16 ms     34.57 MiB
+  LM step (levenberg)             22.35 ms     34.46 MiB
+  LM step (levenberg+accel)       22.67 ms     34.87 MiB
+  full fit (marquardt)             33.1 s    1494 steps  converged = true  cost = 1422.4933
+  full fit (levenberg)             35.8 s    1621 steps  converged = true  cost = 1422.4927
+  full fit (levenberg+accel)        3.1 s     130 steps  converged = true  cost = 1422.4917
