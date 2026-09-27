@@ -32,6 +32,19 @@ and its denoised trajectory (dashed blue) sits on the truth (black), cutting
 the RMS error from 2.58 to 0.38. Reproduce it with
 [`examples/figures/lorenz_fig4_top.jl`](examples/figures/lorenz_fig4_top.jl).
 
+Over 64 random trials per noise level (T = 10, the paper's noise definition),
+the Julia port recovers the exact Lorenz63 model as often as the paper reports:
+
+| Noise | Exact recovery (95% CI) | Paper |
+|---|---|---|
+| 10% | 100% (94–100%) | 100% |
+| 20% | 100% (94–100%) | 100% |
+| 30% | 97% (89–99%) | 90% |
+
+Denoising cuts the mean state RMS error by about 90% at every level. The script
+is [`benchmarks/lorenz_paper.jl`](benchmarks/lorenz_paper.jl), and the per-trial
+results are in [`benchmarks/results/`](benchmarks/results/).
+
 ## Using the code
 
 ### Getting started
@@ -97,8 +110,9 @@ Documentation contributions are welcome. Get in touch!
 
 ## Future Work
 
-The success-rate benchmarks from the paper have not been reproduced in Julia
-yet, and there is no test suite or CI. Also planned: `DataDrivenDiffEq.jl`
+So far only the Lorenz63 success rates at T = 10 have been reproduced (above).
+The rest of the paper's Fig. 4 heatmap, other benchmark systems, a test suite
+and CI are still to do. Also planned: `DataDrivenDiffEq.jl`
 interoperability so a `Basis` can be passed directly, weak-form discretisation,
 swappable optimisers, and a parallelised greedy search.
 

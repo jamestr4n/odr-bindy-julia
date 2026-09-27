@@ -106,7 +106,7 @@ Not tuned — each is a stated belief:
   which is the failure mode paper eq. (6) exists to avoid. The paper itself
   uses `1e-3`, and at that value the default solver settings stall (see
   *Differences from the MATLAB implementation* below): use
-  `ODROptions(lm_damping = :levenberg, lm_maxiter_refine = 16000)`. If the
+  `ODROptions(lm_damping = :levenberg, lm_accel = true, lm_maxiter_refine = 16000)`. If the
   truncation error varies over the trajectory, pass a full `Neq x D` matrix (the
   MATLAB `NonlinearOscillator.m` uses a decaying `sigma_y` this way).
 - `sigma_p`: prior std on coefficients. Large (`1e2`) = weakly informative.
@@ -120,7 +120,7 @@ deliberate or accidental difference in behaviour, not in the model.
 | # | MATLAB | this package | effect |
 |---|---|---|---|
 | 1 | Noise % = `sigma_x / std(X_clean(:))`, one scalar pooled over all states | `examples/lorenz.jl` uses each state's own std | The example's "20%" is ~12–14% by the paper's definition. Benchmarks use the paper's. |
-| 2 | `lsqnonlin`, trust-region-reflective, no variable scaling | Levenberg–Marquardt with Marquardt scaling `diag(J'J)` by default | At `sigma_y = 1e-3` Marquardt scaling over-damps the directions that move the trajectory along the ODE (curvature ~`1/sigma_x^2`, while `diag(J'J)` is ~`1/sigma_y^2`), so nearly every greedy trial hits its 100-step cap and no term can be removed. Fixed by the opt-in `lm_damping = :levenberg`. |
+| 2 | `lsqnonlin`, trust-region-reflective, no variable scaling | Levenberg–Marquardt with Marquardt scaling `diag(J'J)` by default | At `sigma_y = 1e-3` two things go wrong. Marquardt scaling over-damps the directions that move the trajectory along the ODE (curvature ~`1/sigma_x^2`, while `diag(J'J)` is ~`1/sigma_y^2`); and even undamped, Gauss–Newton steps creep (gain ratio ~0.6), so trials need 150–450 steps. With MATLAB's 100-step trial cap nearly every trial "fails" and the search stalls with spurious terms left. Fixed by the opt-in `lm_damping = :levenberg` plus `lm_accel = true` (geodesic acceleration): the full fit converges in ~130 steps instead of ~1500, trials in ~50. Why MATLAB's solver does not need this is not known. |
 | 3 | Initial fit: 4 to 16 attempts, iteration cap doubling from 1000; later refits inherit the doubled cap (≥16000) | `n_multistart` attempts, fixed `lm_maxiter_refine = 1000` | At `sigma_y = 1e-3` the 30-term fit needs ~2000 steps, so the default cap fails every run. Pass `lm_maxiter_refine = 16000`. |
 | 4 | Trial coefficients re-regressed on the warm-start `X` (`LinUseDenoise`) | Previous model's coefficients, one zeroed | Opt-in `trial_xi_init = :regress` gives the MATLAB behaviour. Not yet shown to change success rates. |
 | 5 | Evidence: `dX/dXi` from the full `X`-Hessian | Pure Gauss–Newton Schur complement | Per-step `-log(E)` differs slightly; see *Why the Hessian collapsed*. |
@@ -145,6 +145,8 @@ deliberate or accidental difference in behaviour, not in the model.
 5. **Parallelism.** The trial fits inside one greedy sweep are independent —
    `@threads` over them (the MATLAB `parfor` version).
 6. **Performance.** `theta` is evaluated twice per LM step; cache it. Reuse the
-   sparse pattern of `J` across iterations instead of rebuilding it.
+   sparse pattern of `J` across iterations instead of rebuilding it. (The
+   symbolic Cholesky analysis is already reused: 41 -> 23 ms per step at
+   N = 1000; see `benchmarks/results/lm_perf.txt`.)
 7. **Tests + CI.** Turn `check_derivatives.jl` into a proper test set, add a
    noise-free recovery test and a `Project.toml` `[targets]` entry.
