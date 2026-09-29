@@ -25,25 +25,25 @@ Big-picture plan for the project, organised around Lloyd's two aims.
 
 ### 2a. Design (do this before refactoring)
 
-- [ ] Write `docs/DESIGN.md`: the four extension points, what each component must provide and return, and how they plug into `odr_bindy`. Review it with Lloyd.
-- [ ] Read DataDrivenDiffEq.jl's `Basis` and problem/solve API. Lloyd suggested reusing it, and matching SciML conventions (e.g. CommonSolve `solve(prob, alg)`) makes the package feel native.
-- [ ] Define the abstract types:
+- [x] Write `docs/DESIGN.md`: the four extension points, what each component must provide and return, and how they plug into `odr_bindy`. Review it with Lloyd.
+- [x] Read DataDrivenDiffEq.jl's `Basis` and problem/solve API. Lloyd suggested reusing it, and matching SciML conventions (e.g. CommonSolve `solve(prob, alg)`) makes the package feel native. Findings and a working `Basis` wrapper prototype: `docs/DESIGN.md` §9
+- [x] Define the abstract types (defaults `FiniteDifference`, `BuiltinLM`, `GreedyBackward`; results bit-identical, checked by `test/refactor_fixture.jl`):
   - [x] `AbstractLibrary`
-  - [ ] `AbstractDiscretisation` (returns `(IMat, DMat)`)
-  - [ ] `AbstractOptimiser` (contract: returns an `LMResult`)
-  - [ ] `AbstractModelSelector` (wraps the greedy loop)
+  - [x] `AbstractDiscretisation` (returns `(IMat, DMat)`)
+  - [x] `AbstractOptimiser` (contract: returns an `LMResult`)
+  - [x] `AbstractModelSelector` (wraps the greedy loop)
 
 ### 2b. Pluggable components (at least one alternative for each)
 
 | Component | Default (have) | Alternatives |
 |---|---|---|
-| Library | `PolynomialLibrary` ✓ | [ ] DataDrivenDiffEq `Basis` wrapper (Lloyd's suggestion) · [ ] Fourier / custom-function library |
-| Discretisation | Finite difference ✓ | [ ] Weak form · [ ] spectral / Chebyshev · [ ] uneven sampling |
-| Optimiser | Built-in LM ✓ | [ ] NonlinearSolve.jl backend (TrustRegion / LM) · [ ] LeastSquaresOptim.jl |
-| Model selector | Greedy backward ✓ | [ ] Exhaustive search (small libraries) · [ ] beam search |
+| Library | `PolynomialLibrary` ✓ | [x] DataDrivenDiffEq `Basis` wrapper (Lloyd's suggestion): `BasisLibrary`, in an extension · [x] Fourier / custom-function library: `FourierLibrary`, `CustomLibrary`, plus `CombinedLibrary` |
+| Discretisation | Finite difference ✓ | [x] Weak form: `WeakForm`, using summation by parts (DESIGN §3.2) · [ ] spectral / Chebyshev · [x] uneven sampling: `FiniteDifference` with Fornberg weights |
+| Optimiser | Built-in LM ✓ | [x] NonlinearSolve.jl backend (TrustRegion / LM): `NonlinearSolveOptimiser`, in an extension · [ ] LeastSquaresOptim.jl |
+| Model selector | Greedy backward ✓ | [x] Exhaustive search (small libraries): `Exhaustive` · [x] beam search: `BeamSearch` (`BeamSearch(1)` is bit-identical to greedy) |
 
-- [ ] Each alternative has a test and a short docs example
-- [ ] One example script that swaps every component, to show the interface works end to end
+- [x] Each alternative has a test and a short docs example (`test/runtests.jl`, `test/extensions/runtests.jl`, `docs/COMPONENTS.md`)
+- [x] One example script that swaps every component, to show the interface works end to end (`examples/swap_components.jl`: a pendulum from uneven samples, recovered exactly)
 
 ### 2c. Keep the core lightweight
 
@@ -58,9 +58,9 @@ Big-picture plan for the project, organised around Lloyd's two aims.
   - [ ] exact recovery on noise-free data
   - [ ] Lorenz recovery at a fixed seed
   - [ ] MATLAB-equivalence regression test (small fixture saved in `test/data/`)
-  - [ ] one test per pluggable component (Aim 2)
+  - [x] one test per pluggable component (Aim 2): conformance checks in `test/conformance.jl`
   - [ ] type stability (`@inferred`) on hot functions
-- [ ] Add `[extras]` / `[targets]` for tests in `Project.toml`
+- [x] Add `[extras]` / `[targets]` for tests in `Project.toml`
 - [ ] GitHub Actions CI: Julia 1.9 (LTS/min) and latest, on Linux, Windows and macOS
 - [ ] Coverage via Codecov, and README badges (CI, coverage, docs)
 - [ ] Static checks: Aqua.jl (ambiguities, stale deps), optionally JET.jl
