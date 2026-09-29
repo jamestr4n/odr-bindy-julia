@@ -60,16 +60,39 @@ julia --project=. examples/lorenz.jl
 ```julia
 using ODRBINDy
 
-lib = PolynomialLibrary(3, 2; varnames = ["x", "y", "z"])   # candidate terms
-IMat, DMat = finite_difference_matrices(size(X, 1), 6, dt)  # discretisation
-hyper = ODRHyperParameters(sigma_x = 0.2 * std(vec(X)),     # noise beliefs
-                           sigma_y = 1e-2, sigma_p = 1e2,
-                           Nx = size(X, 1), Neq = size(IMat, 1),
-                           M = nterms(lib), D = 3)
+lib  = PolynomialLibrary(3, 2; varnames = ["x", "y", "z"])     # candidate terms
+prob = ODRProblem(X, t, lib;                                  # X is N x 3, t the sample times
+                  discretisation = FiniteDifference(6),
+                  sigma_x = 0.2 * std(vec(X)),                # noise beliefs
+                  sigma_y = 1e-2, sigma_p = 1e2)
 
-res = odr_bindy(ODRProblem(X, lib, IMat, DMat, hyper))
+res = odr_bindy(prob)
 print_model(res, lib)
 ```
+
+Each `sigma` can be a number, one value per state, or a full matrix.
+
+The solver and the model-selection strategy can be swapped or configured
+independently (see [`docs/DESIGN.md`](docs/DESIGN.md)):
+
+```julia
+res = odr_bindy(prob; optimiser = BuiltinLM(damping = :levenberg, accel = true),
+                      selector  = GreedyBackward(refine_maxiter = 16_000))
+```
+
+All four parts (the library, the discretisation, the optimiser and the model
+selector) are pluggable, and the package provides alternatives for each:
+
+| part | default | alternatives |
+|---|---|---|
+| library | `PolynomialLibrary` | `FourierLibrary`, `CustomLibrary`, `CombinedLibrary`, DataDrivenDiffEq `Basis` via `BasisLibrary` |
+| discretisation | `FiniteDifference` | `FiniteDifference` on uneven samples, `WeakForm` |
+| optimiser | `BuiltinLM` | any NonlinearSolve.jl algorithm via `NonlinearSolveOptimiser` |
+| model selector | `GreedyBackward` | `BeamSearch`, `Exhaustive` |
+
+[`docs/COMPONENTS.md`](docs/COMPONENTS.md) has a short example of each, and
+[`examples/swap_components.jl`](examples/swap_components.jl) replaces all four
+at once to identify a pendulum from unevenly sampled data.
 
 From Lorenz63 data at 20% noise (`examples/lorenz.jl`, 500 samples at
 `dt = 0.01`), this recovers the exact 7-term support:
@@ -85,8 +108,10 @@ trajectory from an RMS error of 1.62 down to 0.16.
 
 ### Installation
 
-Requires `Julia 1.9+`, with no dependencies outside the standard library. Not
-yet registered, so install from this repository:
+Requires `Julia 1.9+`, with no dependencies outside the standard library.
+`BasisLibrary` and `NonlinearSolveOptimiser` become available when
+DataDrivenDiffEq or NonlinearSolve is loaded (package extensions). Not yet
+registered, so install from this repository:
 
 ```julia
 julia> ]
@@ -111,10 +136,9 @@ Documentation contributions are welcome. Get in touch!
 ## Future Work
 
 So far only the Lorenz63 success rates at T = 10 have been reproduced (above).
-The rest of the paper's Fig. 4 heatmap, other benchmark systems, a test suite
-and CI are still to do. Also planned: `DataDrivenDiffEq.jl`
-interoperability so a `Basis` can be passed directly, weak-form discretisation,
-swappable optimisers, and a parallelised greedy search.
+The rest of the paper's Fig. 4 heatmap, other benchmark systems, a full test
+suite and CI are still to do. Also planned: a `solve(prob, alg)` interface
+matching the SciML conventions, and a parallelised greedy search.
 
 Collaborators and contributions are welcome. Get in touch!
 
@@ -128,5 +152,6 @@ systems, which runs without a MATLAB license.
 
 ## Note on dependency and license
 This package has no dependencies outside the Julia standard library.
+DataDrivenDiffEq and NonlinearSolve are optional (weak dependencies).
 
 The algorithm and the reference MATLAB implementation are the work of L. Fung. This is an independent reimplementation in Julia; no source code from the original is reproduced here. Both are released under the MIT License — see LICENSE.

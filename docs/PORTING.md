@@ -131,6 +131,8 @@ deliberate or accidental difference in behaviour, not in the model.
 
 ## Roadmap (project aim 2)
 
+Items 1–4 are worked out in detail in [DESIGN.md](DESIGN.md).
+
 1. **`Basis` interop.** Wrap `DataDrivenDiffEq.Basis` behind `AbstractLibrary`:
    `theta` is `basis(X, p, t)`, `dtheta` is `jacobian(basis)`. Everything else
    is untouched, since Gauss–Newton needs no higher derivatives.
