@@ -2,9 +2,10 @@
 # Levenberg-Marquardt for sparse nonlinear least squares.
 #
 # Replaces MATLAB's `lsqnonlin` with 'trust-region-reflective'. Kept in-package
-# so that ODRBINDy has no dependency outside the standard library; the only
-# contract the rest of the code relies on is `LMResult`, so swapping in
-# NonlinearSolve.jl or LeastSquaresOptim.jl later touches nothing else.
+# so that ODRBINDy has no dependency outside the standard library. It is the
+# default `AbstractOptimiser` (`BuiltinLM`, at the end of this file); another
+# solver plugs in by defining `optimise` for its own type and returning an
+# `LMResult`, which is all the rest of the code relies on.
 #
 # Minimise C(z) = 1/2 ||r(z)||^2 by repeatedly solving the damped normal
 # equations
@@ -241,3 +242,133 @@ function _lm_step!(S::_StepSolver, H::AbstractMatrix, dH::AbstractVector,
         return nothing
     end
 end
+
+# -----------------------------------------------------------------------------
+# Pluggable optimisers
+# -----------------------------------------------------------------------------
+
+"""
+    AbstractOptimiser
+
+Minimises `1/2 ||r(z)||^2` for one sparsity pattern. A subtype must provide
+
+    optimise(opt, fr, fJ, z0; maxiter) -> LMResult
+
+- use the supplied Jacobian `fJ(z)` (sparse, exact), not its own derivatives;
+- honour `maxiter`, which the model selector sets on every call;
+- set `converged` only when a tolerance was met. The greedy search reads a
+  trial that fails to converge as "the removed term is needed", so reporting
+  success on hitting the iteration cap would change which model is selected.
+"""
+abstract type AbstractOptimiser end
+
+"""
+    optimise(opt, fr, fJ, z0; maxiter) -> LMResult
+
+Minimise `1/2 ||fr(z)||^2` from `z0` with optimiser `opt`.
+See [`AbstractOptimiser`](@ref).
+"""
+function optimise end
+
+"""
+    BuiltinLM(; damping = :marquardt, accel = false, ftol = 5e-8, xtol = 1e-12,
+                gtol = 1e-10, lambda0 = 1e-3, lambda_min = 1e-12, lambda_max = 1e12,
+                accel_h = 0.1, accel_alpha = 0.75)
+
+The package's own Levenberg-Marquardt, [`levenberg_marquardt`](@ref), which
+documents each setting. The default optimiser. (Not called
+`LevenbergMarquardt`: NonlinearSolve and LeastSquaresOptim export that name.)
+"""
+struct BuiltinLM <: AbstractOptimiser
+    damping::Symbol
+    accel::Bool
+    ftol::Float64
+    xtol::Float64
+    gtol::Float64
+    lambda0::Float64
+    lambda_min::Float64
+    lambda_max::Float64
+    accel_h::Float64
+    accel_alpha::Float64
+end
+
+function BuiltinLM(; damping::Symbol = :marquardt, accel::Bool = false,
+                   ftol::Real = 5e-8, xtol::Real = 1e-12, gtol::Real = 1e-10,
+                   lambda0::Real = 1e-3, lambda_min::Real = 1e-12,
+                   lambda_max::Real = 1e12, accel_h::Real = 0.1,
+                   accel_alpha::Real = 0.75)
+    damping in (:marquardt, :levenberg) ||
+        throw(ArgumentError("damping must be :marquardt or :levenberg"))
+    return BuiltinLM(damping, accel, ftol, xtol, gtol, lambda0, lambda_min,
+                     lambda_max, accel_h, accel_alpha)
+end
+
+optimise(opt::BuiltinLM, fr, fJ, z0::AbstractVector; maxiter::Int) =
+    levenberg_marquardt(fr, fJ, z0; maxiter = maxiter,
+                        ftol = opt.ftol, xtol = opt.xtol, gtol = opt.gtol,
+                        lambda0 = opt.lambda0, lambda_min = opt.lambda_min,
+                        lambda_max = opt.lambda_max, damping = opt.damping,
+                        accel = opt.accel, accel_h = opt.accel_h,
+                        accel_alpha = opt.accel_alpha)
+
+"""
+    NonlinearSolveOptimiser(alg; ftol = 1e-10, xtol = 1e-10, stalled_steps = 8,
+                            kwargs...)
+
+Any least-squares algorithm from NonlinearSolve.jl, e.g. `TrustRegion()` (the
+closest to MATLAB's `lsqnonlin`) or `LevenbergMarquardt()`. The method lives in
+a package extension, so it is available after `using NonlinearSolve`:
+
+```julia
+using ODRBINDy, NonlinearSolve
+res = odr_bindy(prob; optimiser = NonlinearSolveOptimiser(TrustRegion()))
+```
+
+The solver is given the package's exact sparse Jacobian. It stops once
+`stalled_steps` consecutive steps are shorter than `xtol`, or at `maxiter`.
+Any other keywords go to `solve`.
+
+NonlinearSolve's own return code is not used for `converged`: on a
+least-squares problem whose residual cannot reach zero it can report a stall
+as success. Instead, the fit counts as converged when one more Gauss-Newton
+step could lower the cost by no more than `ftol` times the cost, which is the
+same test whatever the algorithm.
+"""
+struct NonlinearSolveOptimiser{A,K} <: AbstractOptimiser
+    alg::A
+    ftol::Float64
+    xtol::Float64
+    stalled_steps::Int
+    kwargs::K
+end
+
+function NonlinearSolveOptimiser(alg; ftol::Real = 1e-10, xtol::Real = 1e-10,
+                                 stalled_steps::Int = 8, kwargs...)
+    stalled_steps >= 1 || throw(ArgumentError("stalled_steps must be >= 1"))
+    return NonlinearSolveOptimiser(alg, Float64(ftol), Float64(xtol), stalled_steps,
+                                   NamedTuple(kwargs))
+end
+
+"""
+    gauss_newton_decrement(r, J) -> Real
+
+How much one full Gauss-Newton step from this point would lower
+`1/2 ||r||^2` according to the linearised model: `g' (J'J)^{-1} g / 2`, with
+`g = J'r`. Near zero exactly at a stationary point, and independent of the
+algorithm that got there, so it serves as a convergence test for backends
+whose own stopping rules do not fit this problem. `Inf` if `J'J` is singular.
+"""
+function gauss_newton_decrement(r::AbstractVector, J::AbstractMatrix)
+    g = J' * r
+    try
+        return dot(g, cholesky(Symmetric(J' * J)) \ g) / 2
+    catch err
+        err isa InterruptException && rethrow()
+        return Inf
+    end
+end
+
+"The optimiser described by the `lm_*` and tolerance fields of `opts`."
+default_optimiser(opts::ODROptions) =
+    BuiltinLM(damping = opts.lm_damping, accel = opts.lm_accel,
+              ftol = opts.ftol, xtol = opts.xtol, gtol = opts.gtol)

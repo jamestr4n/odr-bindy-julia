@@ -50,6 +50,12 @@ end
 | `trial_xi_init` | trial coefficients: `:previous` (default) reuses the previous model's; `:regress` re-fits them by bootstrap ridge on the warm-start `X`, as MATLAB does |
 | `stop_after_rises` | stop after this many consecutive drops in evidence |
 | `verbose` | 0 silent, 1 per removal, 2 per trial |
+
+The `lm_*`, `ftol`, `xtol` and `gtol` fields configure the default optimiser
+([`BuiltinLM`](@ref)), and `lm_maxiter`, `lm_maxiter_refine`, `warm_start`,
+`trial_xi_init`, `refine_after_removal` and `stop_after_rises` the default
+selector ([`GreedyBackward`](@ref)). They are ignored when `odr_bindy` is given
+an `optimiser` or `selector` explicitly.
 """
 Base.@kwdef mutable struct ODROptions
     n_multistart::Int = 8
@@ -103,6 +109,49 @@ function ODRProblem(Xdata::AbstractMatrix{T}, lib::AbstractLibrary,
     return ODRProblem{typeof(lib),T}(Matrix{T}(Xdata), lib,
                                      sparse(T.(IMat)), sparse(T.(DMat)),
                                      hyper, Nx, Neq, D, M)
+end
+
+"""
+    ODRProblem(Xdata, t, lib; discretisation = FiniteDifference(6),
+               sigma_x, sigma_y, sigma_p)
+
+Build the problem from the raw series `Xdata` (`Nx x D`) sampled at times `t`.
+The operators come from `discretisation` (an [`AbstractDiscretisation`](@ref)),
+so `Neq` never has to be worked out by hand. Each `sigma` can be
+
+- a number, used everywhere;
+- a length-`D` vector, one value per state (e.g. per-state noise levels);
+- a full matrix: `Nx x D` for `sigma_x`, `Neq x D` for `sigma_y`, `M x D`
+  for `sigma_p`.
+
+See [`ODRHyperParameters`](@ref) for what each one means.
+"""
+function ODRProblem(Xdata::AbstractMatrix, t::AbstractVector, lib::AbstractLibrary;
+                    discretisation::AbstractDiscretisation = FiniteDifference(6),
+                    sigma_x, sigma_y, sigma_p)
+    Nx, D = size(Xdata)
+    length(t) == Nx ||
+        throw(DimensionMismatch("t must have $Nx entries, one per row of Xdata"))
+    IMat, DMat = operators(discretisation, t)
+    Neq, M = size(IMat, 1), nterms(lib)
+    hyper = ODRHyperParameters(_sigma_matrix(sigma_x, Nx, D, "sigma_x"),
+                               _sigma_matrix(sigma_y, Neq, D, "sigma_y"),
+                               _sigma_matrix(sigma_p, M, D, "sigma_p"))
+    return ODRProblem(Xdata, lib, IMat, DMat, hyper)
+end
+
+"Broadcast a scalar, per-state vector or full matrix `s` to an `n x D` matrix."
+_sigma_matrix(s::Real, n::Int, D::Int, name) = fill(Float64(s), n, D)
+
+function _sigma_matrix(s::AbstractVector, n::Int, D::Int, name)
+    length(s) == D ||
+        throw(DimensionMismatch("$name as a vector needs one entry per state ($D)"))
+    return repeat(Float64.(permutedims(s)), n, 1)
+end
+
+function _sigma_matrix(s::AbstractMatrix, n::Int, D::Int, name)
+    size(s) == (n, D) || throw(DimensionMismatch("$name must be $n x $D"))
+    return Matrix{Float64}(s)
 end
 
 "Column ranges of the flattened parameter vector belonging to each state dimension."

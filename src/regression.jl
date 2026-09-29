@@ -5,7 +5,7 @@
 #
 #   1. bootstrap ridge regression for an initial Xi          (initialguess.jl)
 #   2. pack z = [vec(X0); xi0]                               (problem.jl)
-#   3. Levenberg-Marquardt on the ODR residual               (lm.jl)
+#   3. minimise the ODR residual (default: LM)               (lm.jl)
 #   4. unpack, scatter xi back into the M x D matrix
 #   5. score by Bayesian evidence                            (evidence.jl)
 #
@@ -36,10 +36,11 @@ struct ODRFit{T<:Real}
 end
 
 """
-    fit_model(prob, mask, opts; X0, xi0, maxiter, rng) -> ODRFit
+    fit_model(prob, mask, opts; optimiser, X0, xi0, maxiter, rng) -> ODRFit
 
 Jointly optimise the states and the active coefficients of `mask`, then score
-the result.
+the result. `optimiser` is any [`AbstractOptimiser`](@ref); by default the
+built-in LM configured by the `lm_*` fields of `opts`.
 
 `X0` is the starting guess for the states — the raw data for a cold start, or
 the previous model's denoised states for a warm start (paper section 2.3, point 2:
@@ -48,6 +49,7 @@ coefficient guess is already available.
 """
 function fit_model(prob::ODRProblem{L,T}, mask::AbstractMatrix{Bool},
                    opts::ODROptions = ODROptions();
+                   optimiser::AbstractOptimiser = default_optimiser(opts),
                    X0::AbstractMatrix = prob.Xdata,
                    xi0::Union{Nothing,AbstractVector} = nothing,
                    maxiter::Int = opts.lm_maxiter_refine,
@@ -67,9 +69,7 @@ function fit_model(prob::ODRProblem{L,T}, mask::AbstractMatrix{Bool},
         collect(xi0)
 
     z0 = vcat(vec(Matrix{T}(X0)), Vector{T}(xistart))
-    res = levenberg_marquardt(fr, fJ, z0; maxiter = maxiter,
-                              ftol = opts.ftol, xtol = opts.xtol, gtol = opts.gtol,
-                              damping = opts.lm_damping, accel = opts.lm_accel)
+    res = optimise(optimiser, fr, fJ, z0; maxiter = maxiter)::LMResult
 
     X, xi = unpack(prob, res.z)
     Xi = zeros(T, prob.M, prob.D)
@@ -84,7 +84,7 @@ function fit_model(prob::ODRProblem{L,T}, mask::AbstractMatrix{Bool},
 end
 
 """
-    fit_model_multistart(prob, mask, opts; X0, nstarts, maxiter) -> ODRFit
+    fit_model_multistart(prob, mask, opts; optimiser, X0, nstarts, maxiter) -> ODRFit
 
 Run `fit_model` from several independent bootstrap starting points and keep the
 best-scoring result.
@@ -96,12 +96,14 @@ from.
 """
 function fit_model_multistart(prob::ODRProblem{L,T}, mask::AbstractMatrix{Bool},
                               opts::ODROptions = ODROptions();
+                              optimiser::AbstractOptimiser = default_optimiser(opts),
                               X0::AbstractMatrix = prob.Xdata,
                               nstarts::Int = opts.n_multistart,
                               maxiter::Int = opts.lm_maxiter_refine) where {L,T}
     best = nothing
     for s in 1:max(nstarts, 1)
-        f = fit_model(prob, mask, opts; X0 = X0, maxiter = maxiter)
+        f = fit_model(prob, mask, opts; optimiser = optimiser, X0 = X0,
+                      maxiter = maxiter)
         if opts.verbose >= 2
             @printf("    start %2d/%2d: -log(E) = %s  (%d LM steps%s)\n",
                     s, max(nstarts, 1), _fmt_evidence(f.nlevidence), f.iterations,
