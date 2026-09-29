@@ -143,7 +143,7 @@ function select_model(sel::GreedyBackward, prob::ODRProblem{L,T},
     # `trial_maxiter`, will not converge either, and no term can be removed.
     current.converged || @warn "ODRBINDy: the initial full-library fit did not " *
         "converge; every trial will score -log(E) = Inf and no term can be " *
-        "removed. Raise `refine_maxiter` (`lm_maxiter_refine` in ODROptions), " *
+        "removed. Raise the selector's `refine_maxiter`, " *
         "or raise `sigma_y` towards the " *
         "discretisation's actual truncation error -- too small a `sigma_y` " *
         "turns the soft model constraint into a nearly hard one, which is the " *

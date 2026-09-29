@@ -35,45 +35,89 @@ function ODRHyperParameters(; sigma_x::Real, sigma_y::Real, sigma_p::Real,
 end
 
 """
-    ODROptions(; kwargs...)
+    ODROptions(; n_multistart = 8, bootstrap_samples = 100, bragging = true,
+                 verbose = 1, rng = Random.default_rng())
+
+Settings shared by every optimiser and selector.
 
 | option | meaning |
 |---|---|
 | `n_multistart` | independent bootstrap starts for the initial full-library fit |
 | `bootstrap_samples` | resamples used by the ridge-regression initial guess |
 | `bragging` | median (`true`) rather than mean (`false`) over bootstrap samples |
-| `lm_maxiter` | LM iteration cap during greedy trials (deliberately tight: a trial that will not converge is evidence the term is needed) |
-| `lm_maxiter_refine` | iteration cap for the full fit and post-removal refinement |
-| `lm_damping` | `:marquardt` (default) or `:levenberg`; see [`levenberg_marquardt`](@ref). Use `:levenberg` for small `sigma_y` |
-| `lm_accel` | geodesic acceleration in the LM solver; ~10x fewer steps at small `sigma_y` |
-| `warm_start` | seed each trial with the previous model's denoised `X` |
-| `trial_xi_init` | trial coefficients: `:previous` (default) reuses the previous model's; `:regress` re-fits them by bootstrap ridge on the warm-start `X`, as MATLAB does |
-| `stop_after_rises` | stop after this many consecutive drops in evidence |
 | `verbose` | 0 silent, 1 per removal, 2 per trial |
+| `rng` | random number generator for the bootstrap |
 
-The `lm_*`, `ftol`, `xtol` and `gtol` fields configure the default optimiser
-([`BuiltinLM`](@ref)), and `lm_maxiter`, `lm_maxiter_refine`, `warm_start`,
-`trial_xi_init`, `refine_after_removal` and `stop_after_rises` the default
-selector ([`GreedyBackward`](@ref)). They are ignored when `odr_bindy` is given
-an `optimiser` or `selector` explicitly.
+# Deprecated keywords
+
+The solver and search settings have moved into the components that use them.
+The old keywords still work, with a deprecation warning, and are removed in
+v1.0. Each one configures the *default* optimiser or selector, so it is ignored
+when `odr_bindy` is given an `optimiser` or `selector` explicitly.
+
+| deprecated keyword | use instead |
+|---|---|
+| `lm_damping`, `lm_accel`, `ftol`, `xtol`, `gtol` | `optimiser = BuiltinLM(damping, accel, ftol, xtol, gtol)` |
+| `lm_maxiter` | `selector = GreedyBackward(trial_maxiter)` |
+| `lm_maxiter_refine` | `selector = GreedyBackward(refine_maxiter)` |
+| `warm_start`, `trial_xi_init`, `refine_after_removal`, `stop_after_rises` | `selector = GreedyBackward(...)`, same names |
 """
-Base.@kwdef mutable struct ODROptions
-    n_multistart::Int = 8
-    bootstrap_samples::Int = 100
-    bragging::Bool = true
-    lm_maxiter::Int = 100
-    lm_maxiter_refine::Int = 1000
-    lm_damping::Symbol = :marquardt
-    lm_accel::Bool = false
-    ftol::Float64 = 5e-8
-    xtol::Float64 = 1e-12
-    gtol::Float64 = 1e-10
-    warm_start::Bool = true
-    trial_xi_init::Symbol = :previous
-    refine_after_removal::Bool = true
-    stop_after_rises::Int = 2
-    verbose::Int = 1
-    rng::AbstractRNG = Random.default_rng()
+mutable struct ODROptions
+    n_multistart::Int
+    bootstrap_samples::Int
+    bragging::Bool
+    # deprecated: read only by `default_optimiser` and `default_selector`
+    lm_maxiter::Int
+    lm_maxiter_refine::Int
+    lm_damping::Symbol
+    lm_accel::Bool
+    ftol::Float64
+    xtol::Float64
+    gtol::Float64
+    warm_start::Bool
+    trial_xi_init::Symbol
+    refine_after_removal::Bool
+    stop_after_rises::Int
+    verbose::Int
+    rng::AbstractRNG
+end
+
+function ODROptions(; n_multistart::Int = 8, bootstrap_samples::Int = 100,
+                    bragging::Bool = true, verbose::Int = 1,
+                    rng::AbstractRNG = Random.default_rng(),
+                    lm_maxiter = nothing, lm_maxiter_refine = nothing,
+                    lm_damping = nothing, lm_accel = nothing,
+                    ftol = nothing, xtol = nothing, gtol = nothing,
+                    warm_start = nothing, trial_xi_init = nothing,
+                    refine_after_removal = nothing, stop_after_rises = nothing)
+    lm = "optimiser = BuiltinLM"
+    gb = "selector = GreedyBackward"
+    return ODROptions(
+        n_multistart, bootstrap_samples, bragging,
+        _moved_option(:lm_maxiter, lm_maxiter, 100, "$gb(trial_maxiter = ...)"),
+        _moved_option(:lm_maxiter_refine, lm_maxiter_refine, 1000,
+                      "$gb(refine_maxiter = ...)"),
+        _moved_option(:lm_damping, lm_damping, :marquardt, "$lm(damping = ...)"),
+        _moved_option(:lm_accel, lm_accel, false, "$lm(accel = ...)"),
+        _moved_option(:ftol, ftol, 5e-8, "$lm(ftol = ...)"),
+        _moved_option(:xtol, xtol, 1e-12, "$lm(xtol = ...)"),
+        _moved_option(:gtol, gtol, 1e-10, "$lm(gtol = ...)"),
+        _moved_option(:warm_start, warm_start, true, "$gb(warm_start = ...)"),
+        _moved_option(:trial_xi_init, trial_xi_init, :previous,
+                      "$gb(trial_xi_init = ...)"),
+        _moved_option(:refine_after_removal, refine_after_removal, true,
+                      "$gb(refine_after_removal = ...)"),
+        _moved_option(:stop_after_rises, stop_after_rises, 2,
+                      "$gb(stop_after_rises = ...)"),
+        verbose, rng)
+end
+
+"`value` if the deprecated keyword `name` was passed (with a warning), else `default`."
+function _moved_option(name::Symbol, value, default, home::String)
+    value === nothing && return default
+    Base.depwarn("`ODROptions($name = ...)` is deprecated and will be removed in " *
+                 "v1.0; pass `$home` to `odr_bindy` instead.", :ODROptions)
+    return value
 end
 
 """

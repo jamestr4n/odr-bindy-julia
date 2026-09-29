@@ -93,6 +93,7 @@ selector) are pluggable, and the package provides alternatives for each:
 [`docs/COMPONENTS.md`](docs/COMPONENTS.md) has a short example of each, and
 [`examples/swap_components.jl`](examples/swap_components.jl) replaces all four
 at once to identify a pendulum from unevenly sampled data.
+[`docs/API.md`](docs/API.md) lists the public API, which is frozen for v1.0.
 
 From Lorenz63 data at 20% noise (`examples/lorenz.jl`, 500 samples at
 `dt = 0.01`), this recovers the exact 7-term support:

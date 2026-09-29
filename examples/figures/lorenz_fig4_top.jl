@@ -73,13 +73,14 @@ else
     hyper = ODRHyperParameters(sigma_x = sx, sigma_y = 1e-3, sigma_p = 100.0,
                                Nx = N, Neq = size(IMat, 1), M = nterms(lib), D = 3)
     prob = ODRProblem(Xdata, lib, IMat, DMat, hyper)
-    opts = ODROptions(n_multistart = 4, lm_maxiter_refine = 16000, lm_damping = :levenberg,
-                      lm_accel = true, verbose = 1, rng = rng)
+    opts = ODROptions(n_multistart = 4, verbose = 1, rng = rng)
+    optimiser = BuiltinLM(damping = :levenberg, accel = true)
+    selector = GreedyBackward(refine_maxiter = 16000)
 
     @printf("Lorenz63: N = %d, dt = %.2f, noise = %.0f%% (sigma_x = %.4f)\n\n",
             N, DT, 100NOISE, sx)
     t0 = time()
-    res = odr_bindy(prob, opts)
+    res = odr_bindy(prob, opts; optimiser = optimiser, selector = selector)
     @printf("\nelapsed: %.1f s\n", time() - t0)
     Xhat, Xi = res.X, res.Xi
 

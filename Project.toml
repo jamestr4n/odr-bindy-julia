@@ -1,7 +1,7 @@
 name = "ODRBINDy"
 uuid = "b3c1a7e2-5d4f-4a9e-8c31-0f2d6a7b9e41"
 authors = ["James"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

@@ -47,8 +47,8 @@ Big-picture plan for the project, organised around Lloyd's two aims.
 
 ### 2c. Keep the core lightweight
 
-- [ ] Load heavy optional dependencies (DataDrivenDiffEq, NonlinearSolve) as **package extensions** (`[weakdeps]` + `[extensions]`, `ext/` folder, Julia 1.9+), so that `using ODRBINDy` stays stdlib-only
-- [ ] Freeze the public API for v1.0
+- [x] Load heavy optional dependencies (DataDrivenDiffEq, NonlinearSolve) as **package extensions** (`[weakdeps]` + `[extensions]`, `ext/` folder, Julia 1.9+), so that `using ODRBINDy` stays stdlib-only. `ext/ODRBINDyDataDrivenDiffEqExt.jl` (`BasisLibrary`) and `ext/ODRBINDyNonlinearSolveExt.jl` (`NonlinearSolveOptimiser`); `using ODRBINDy` loads no package outside the standard library
+- [x] Freeze the public API for v1.0: listed in `docs/API.md` and pinned by `test/api.jl`. `residual` and `jacobian` are no longer exported (they clashed with DataDrivenDiffEq), and the moved `ODROptions` keywords give deprecation warnings until v1.0. Version bumped to 0.2.0
 
 ## Track C: Software quality
 

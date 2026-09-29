@@ -62,7 +62,7 @@ export fornberg_weights, derivative_matrix
 # problem setup
 export ODRProblem, ODRHyperParameters, ODROptions
 # pieces, exported so they can be used or replaced individually
-export residual, jacobian, bootstrap_ridge
+export bootstrap_ridge
 export AbstractOptimiser, BuiltinLM, NonlinearSolveOptimiser, optimise
 export levenberg_marquardt, LMResult, gauss_newton_decrement
 export reduced_hessian, neg_log_evidence
@@ -71,6 +71,13 @@ export ODRFit, fit_model, fit_model_multistart
 export AbstractModelSelector, GreedyBackward, BeamSearch, Exhaustive, select_model
 export n_models
 export ODRResult, odr_bindy, print_model, state_names
+
+# Public but not exported: DataDrivenDiffEq and Symbolics export a `jacobian`
+# too, and an unqualified call is ambiguous when both are loaded. Use
+# `ODRBINDy.residual` and `ODRBINDy.jacobian`. (`public` needs Julia 1.11.)
+@static if VERSION >= v"1.11"
+    eval(Meta.parse("public residual, jacobian"))
+end
 
 # Point at the missing package when an extension's method is not loaded.
 function __init__()

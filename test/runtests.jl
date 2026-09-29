@@ -5,7 +5,8 @@
 #
 # Components that need other packages (BasisLibrary, NonlinearSolveOptimiser)
 # are tested in test/extensions/runtests.jl. Bit-identical results for the
-# default components are checked by test/refactor_fixture.jl.
+# default components are checked by test/refactor_fixture.jl. The frozen public
+# API is checked by test/api.jl, included at the end.
 # =============================================================================
 
 include("conformance.jl")
@@ -221,5 +222,7 @@ end
         @test occursin("dω/dt", String(take!(io)))
     end
 end
+
+include("api.jl")
 
 end # testset

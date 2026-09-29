@@ -14,7 +14,7 @@
 # =============================================================================
 
 using ODRBINDy
-using ODRBINDy: cost
+using ODRBINDy: residual, jacobian, cost
 using LinearAlgebra, SparseArrays, Random, Statistics, Printf
 
 const REPS = 5

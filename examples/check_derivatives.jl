@@ -17,7 +17,7 @@
 # =============================================================================
 
 using ODRBINDy
-using ODRBINDy: cost, unpack, active_indices
+using ODRBINDy: residual, jacobian, cost, unpack, active_indices
 using LinearAlgebra, SparseArrays, Random, Printf, Statistics
 
 rng = MersenneTwister(1234)

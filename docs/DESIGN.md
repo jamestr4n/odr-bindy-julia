@@ -275,11 +275,13 @@ Until v1.0, the old keywords keep working with a deprecation warning that names
 the new home. This matters for checking the refactor, because
 `benchmarks/lorenz_paper.jl` can then be rerun unchanged and compared.
 
-**Status:** the new homes exist, but the fields have not been removed. For now
-they configure the *default* optimiser and selector (`default_optimiser(opts)`,
-`default_selector(opts)`), and are ignored when `odr_bindy` is given an
-`optimiser` or `selector`. The deprecation warnings come with the v1.0 API
-freeze (2c).
+**Status (v0.2):** done. Passing any of the moved keywords to `ODROptions` gives a
+deprecation warning that names the new home (`Base.depwarn`, so it shows under
+`] test` or `--depwarn=yes`). The fields still configure the *default*
+optimiser and selector (`default_optimiser(opts)`, `default_selector(opts)`)
+and are ignored when `odr_bindy` is given an `optimiser` or `selector`. They
+are removed in v1.0. The examples, benchmarks and fixture now use the
+components directly. The frozen API is listed in [API.md](API.md).
 
 ## 5. User-facing API
 
@@ -340,7 +342,7 @@ pluggable component".
 2. Add the three new abstract types, each with its default wrapping the
    existing code (`FiniteDifference`, `BuiltinLM`, `GreedyBackward`). Split
    `ODROptions` (§4). Check against the fixture: the result must be identical,
-   not just close. *(Done, apart from the deprecations in §4. Fixture
+   not just close. *(Done, including the deprecations in §4. Fixture
    identical.)*
 3. Add the new `ODRProblem` constructor (§5). The fixture must still match.
    *(Done.)*
@@ -349,6 +351,10 @@ pluggable component".
    `test/runtests.jl` and `test/extensions/runtests.jl`. The fixture still
    matches.)*
 5. Move heavy-dependency alternatives into package extensions (2c).
+   *(Done: `BasisLibrary` and `NonlinearSolveOptimiser`. `using ODRBINDy`
+   loads no package outside the standard library.)*
+6. Freeze the public API (2c). *(Done: [API.md](API.md), pinned by
+   `test/api.jl`.)*
 
 ## 8. Open questions for Lloyd
 
@@ -482,5 +488,5 @@ the internal problem. Then rebuild the answer as a `Basis` with the public
 4. **Stop exporting `jacobian` (and probably `residual`).** DataDrivenDiffEq,
    Symbolics and others export a `jacobian` too. With both packages loaded, an
    unqualified `jacobian` call fails with an ambiguity error (hit while writing
-   the prototype). They stay reachable as `ODRBINDy.jacobian`. Do this before
-   the v1.0 API freeze.
+   the prototype). They stay reachable as `ODRBINDy.jacobian`. *(Done in
+   v0.2: both are unexported, and are marked `public` on Julia 1.11+.)*

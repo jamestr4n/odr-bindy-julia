@@ -88,13 +88,13 @@ function run_all(io)
     @printf("A done in %.1f s\n", t)
 
     optsB = ODROptions(verbose = 0, rng = MersenneTwister(2), n_multistart = 3,
-                       bootstrap_samples = 50, bragging = false,
-                       lm_maxiter = 60, lm_maxiter_refine = 3000,
-                       lm_damping = :levenberg, lm_accel = true,
-                       ftol = 1e-9, xtol = 1e-13, gtol = 1e-11,
-                       trial_xi_init = :regress, refine_after_removal = false,
-                       stop_after_rises = 3)
-    t = @elapsed res = odr_bindy(prob, optsB)
+                       bootstrap_samples = 50, bragging = false)
+    optB = BuiltinLM(damping = :levenberg, accel = true,
+                     ftol = 1e-9, xtol = 1e-13, gtol = 1e-11)
+    selB = GreedyBackward(trial_maxiter = 60, refine_maxiter = 3000,
+                          trial_xi_init = :regress, refine_after_removal = false,
+                          stop_after_rises = 3)
+    t = @elapsed res = odr_bindy(prob, optsB; optimiser = optB, selector = selB)
     report(io, "B vanderpol all options changed", res)
     @printf("B done in %.1f s\n", t)
 

@@ -106,7 +106,8 @@ Not tuned — each is a stated belief:
   which is the failure mode paper eq. (6) exists to avoid. The paper itself
   uses `1e-3`, and at that value the default solver settings stall (see
   *Differences from the MATLAB implementation* below): use
-  `ODROptions(lm_damping = :levenberg, lm_accel = true, lm_maxiter_refine = 16000)`. If the
+  `optimiser = BuiltinLM(damping = :levenberg, accel = true)` and
+  `selector = GreedyBackward(refine_maxiter = 16000)`. If the
   truncation error varies over the trajectory, pass a full `Neq x D` matrix (the
   MATLAB `NonlinearOscillator.m` uses a decaying `sigma_y` this way).
 - `sigma_p`: prior std on coefficients. Large (`1e2`) = weakly informative.
@@ -120,9 +121,9 @@ deliberate or accidental difference in behaviour, not in the model.
 | # | MATLAB | this package | effect |
 |---|---|---|---|
 | 1 | Noise % = `sigma_x / std(X_clean(:))`, one scalar pooled over all states | `examples/lorenz.jl` uses each state's own std | The example's "20%" is ~12–14% by the paper's definition. Benchmarks use the paper's. |
-| 2 | `lsqnonlin`, trust-region-reflective, no variable scaling | Levenberg–Marquardt with Marquardt scaling `diag(J'J)` by default | At `sigma_y = 1e-3` two things go wrong. Marquardt scaling over-damps the directions that move the trajectory along the ODE (curvature ~`1/sigma_x^2`, while `diag(J'J)` is ~`1/sigma_y^2`); and even undamped, Gauss–Newton steps creep (gain ratio ~0.6), so trials need 150–450 steps. With MATLAB's 100-step trial cap nearly every trial "fails" and the search stalls with spurious terms left. Fixed by the opt-in `lm_damping = :levenberg` plus `lm_accel = true` (geodesic acceleration): the full fit converges in ~130 steps instead of ~1500, trials in ~50. Why MATLAB's solver does not need this is not known. |
-| 3 | Initial fit: 4 to 16 attempts, iteration cap doubling from 1000; later refits inherit the doubled cap (≥16000) | `n_multistart` attempts, fixed `lm_maxiter_refine = 1000` | At `sigma_y = 1e-3` the 30-term fit needs ~2000 steps, so the default cap fails every run. Pass `lm_maxiter_refine = 16000`. |
-| 4 | Trial coefficients re-regressed on the warm-start `X` (`LinUseDenoise`) | Previous model's coefficients, one zeroed | Opt-in `trial_xi_init = :regress` gives the MATLAB behaviour. Not yet shown to change success rates. |
+| 2 | `lsqnonlin`, trust-region-reflective, no variable scaling | Levenberg–Marquardt with Marquardt scaling `diag(J'J)` by default | At `sigma_y = 1e-3` two things go wrong. Marquardt scaling over-damps the directions that move the trajectory along the ODE (curvature ~`1/sigma_x^2`, while `diag(J'J)` is ~`1/sigma_y^2`); and even undamped, Gauss–Newton steps creep (gain ratio ~0.6), so trials need 150–450 steps. With MATLAB's 100-step trial cap nearly every trial "fails" and the search stalls with spurious terms left. Fixed by the opt-in `BuiltinLM(damping = :levenberg, accel = true)` (geodesic acceleration): the full fit converges in ~130 steps instead of ~1500, trials in ~50. Why MATLAB's solver does not need this is not known. |
+| 3 | Initial fit: 4 to 16 attempts, iteration cap doubling from 1000; later refits inherit the doubled cap (≥16000) | `n_multistart` attempts, fixed `refine_maxiter = 1000` | At `sigma_y = 1e-3` the 30-term fit needs ~2000 steps, so the default cap fails every run. Pass `GreedyBackward(refine_maxiter = 16000)`. |
+| 4 | Trial coefficients re-regressed on the warm-start `X` (`LinUseDenoise`) | Previous model's coefficients, one zeroed | Opt-in `GreedyBackward(trial_xi_init = :regress)` gives the MATLAB behaviour. Not yet shown to change success rates. |
 | 5 | Evidence: `dX/dXi` from the full `X`-Hessian | Pure Gauss–Newton Schur complement | Per-step `-log(E)` differs slightly; see *Why the Hessian collapsed*. |
 | 6 | After a removal, keeps the lower of the refit and the trial; retries failed refits (`MaxFailedRun`) | Takes the refit whenever it is finite; no retry | Can change which model is kept at a step. |
 | 7 | Rises in `-log(E)` counted from the 3rd removal on | Counted from the 1st | Can stop the search earlier. |

@@ -15,17 +15,17 @@
 #   model       2nd-order polynomial library, 6th-order finite differences
 #   hyper       sigma_y = 1e-3, sigma_p = 100
 #   success     selected support == true support, exactly
-#   solver      lm_maxiter_refine = 16000, n_multistart = 4. MATLAB's initial fit
+#   solver      GreedyBackward(refine_maxiter = 16000), n_multistart = 4. MATLAB's initial fit
 #               makes at least 4 attempts (MinInitialTrial) and doubles the
 #               iteration cap from 1000 after each one, and later refits inherit
 #               the doubled cap (1000 * 2^4 = 16000). At sigma_y = 1e-3 the full
 #               library fit needs a few thousand LM steps, so the package default
 #               of 1000 fails every run.
-#               lm_damping = :levenberg. With Marquardt (diag(J'J)) damping,
+#               BuiltinLM(damping = :levenberg). With Marquardt (diag(J'J)) damping,
 #               almost every greedy trial hits its 100-step cap at
 #               sigma_y = 1e-3, so no term can ever be removed. See the
 #               docstring of `levenberg_marquardt`.
-#               lm_accel = true: geodesic acceleration. Without it the
+#               BuiltinLM(accel = true): geodesic acceleration. Without it the
 #               Gauss-Newton steps creep (gain ratio ~0.6), trials need 150-450
 #               LM steps instead of the ~50 they need with it, and the 100-step
 #               trial cap (MATLAB's) makes the search stall with spurious terms.
@@ -77,7 +77,8 @@ end
 
 # --- one trial ----------------------------------------------------------------
 
-function run_trial(Xlong, signal, T, noise, trial, sigma_y, opts_kw)
+function run_trial(Xlong, signal, T, noise, trial, sigma_y, n_multistart, optimiser,
+                   selector)
     N = round(Int, T / DT)
     Xclean = Xlong[1:N, :]
     seed = trial                             # same noise draw for trial k in every cell
@@ -90,11 +91,11 @@ function run_trial(Xlong, signal, T, noise, trial, sigma_y, opts_kw)
     hyper = ODRHyperParameters(sigma_x = sx, sigma_y = sigma_y, sigma_p = 100.0,
                                Nx = N, Neq = size(IMat, 1), M = nterms(lib), D = 3)
     prob = ODRProblem(Xdata, lib, IMat, DMat, hyper)
-    opts = ODROptions(; verbose = 0, rng = rng, opts_kw...)
+    opts = ODROptions(; n_multistart = n_multistart, verbose = 0, rng = rng)
 
     Xi_true = truth()
     t0 = time()
-    res = odr_bindy(prob, opts)
+    res = odr_bindy(prob, opts; optimiser = optimiser, selector = selector)
     runtime = time() - t0
 
     return (T = T, N = N, noise = noise, trial = trial, seed = seed, sigma_y = sigma_y,
@@ -170,12 +171,11 @@ function main(args)
     ndone = Threads.Atomic{Int}(0)
     t0 = time()
     Threads.@threads :dynamic for (T, e, k) in todo
-        r = run_trial(Xlong, signal, T, e, k, cfg.sigma_y, (n_multistart = cfg.multistart,
-                                                                  lm_maxiter_refine = cfg.maxiter_refine,
-                                                                  lm_damping = cfg.damping,
-                                                                  trial_xi_init = cfg.trial_init,
-                                                                  lm_maxiter = cfg.maxiter,
-                                                                  lm_accel = cfg.accel))
+        r = run_trial(Xlong, signal, T, e, k, cfg.sigma_y, cfg.multistart,
+                      BuiltinLM(damping = cfg.damping, accel = cfg.accel),
+                      GreedyBackward(trial_maxiter = cfg.maxiter,
+                                     refine_maxiter = cfg.maxiter_refine,
+                                     trial_xi_init = cfg.trial_init))
         lock(lk) do
             open(io -> println(io, csvrow(r)), RESULTS, "a")
             n = Threads.atomic_add!(ndone, 1) + 1
