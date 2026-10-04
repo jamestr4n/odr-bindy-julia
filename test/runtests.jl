@@ -1,12 +1,14 @@
 # =============================================================================
-# Tests for the pluggable components (Aim 2b).
+# The test suite.
 #
 #     julia --project=. test/runtests.jl      (or `] test`)
 #
+# The derivative checks (test/derivatives.jl) run first, then the pluggable
+# components (Aim 2b), then the frozen public API (test/api.jl).
+#
 # Components that need other packages (BasisLibrary, NonlinearSolveOptimiser)
 # are tested in test/extensions/runtests.jl. Bit-identical results for the
-# default components are checked by test/refactor_fixture.jl. The frozen public
-# API is checked by test/api.jl, included at the end.
+# default components are checked by test/refactor_fixture.jl.
 # =============================================================================
 
 include("conformance.jl")
@@ -14,7 +16,9 @@ include("problems.jl")
 
 quiet(seed = 1) = ODROptions(verbose = 0, rng = MersenneTwister(seed))
 
-@testset "ODRBINDy components" begin
+@testset "ODRBINDy" begin
+
+include("derivatives.jl")
 
 @testset "libraries" begin
     @testset "PolynomialLibrary" begin

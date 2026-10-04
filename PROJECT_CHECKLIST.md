@@ -54,7 +54,7 @@ Big-picture plan for the project, organised around Lloyd's two aims.
 
 - [x] Rename `gitignore` to `.gitignore` (without the dot it has no effect)
 - [ ] `test/runtests.jl` with `@testset`s:
-  - [ ] derivative checks (from `examples/check_derivatives.jl`)
+  - [x] derivative checks (from `examples/check_derivatives.jl`): `test/derivatives.jl`, run first
   - [ ] exact recovery on noise-free data
   - [ ] Lorenz recovery at a fixed seed
   - [ ] MATLAB-equivalence regression test (small fixture saved in `test/data/`)

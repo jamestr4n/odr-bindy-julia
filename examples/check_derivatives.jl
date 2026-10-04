@@ -12,8 +12,8 @@
 #   3. jacobian        vs central differences of residual, column by column
 #   4. reduced_hessian vs second differences of the X-profiled loss
 #
-# These are intended to become test/runtests.jl by wrapping each `@printf` in
-# an `@test`.
+# The same checks run as `@test`s in test/derivatives.jl, part of the test
+# suite. This script prints the actual errors, which helps when one fails.
 # =============================================================================
 
 using ODRBINDy
