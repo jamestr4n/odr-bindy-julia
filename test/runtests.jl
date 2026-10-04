@@ -3,8 +3,9 @@
 #
 #     julia --project=. test/runtests.jl      (or `] test`)
 #
-# The derivative checks (test/derivatives.jl) run first, then the pluggable
-# components (Aim 2b), then the frozen public API (test/api.jl).
+# The derivative checks (test/derivatives.jl) run first, then recovery of known
+# models (test/recovery.jl), the pluggable components (Aim 2b) and the frozen
+# public API (test/api.jl).
 #
 # Components that need other packages (BasisLibrary, NonlinearSolveOptimiser)
 # are tested in test/extensions/runtests.jl. Bit-identical results for the
@@ -19,6 +20,7 @@ quiet(seed = 1) = ODROptions(verbose = 0, rng = MersenneTwister(seed))
 @testset "ODRBINDy" begin
 
 include("derivatives.jl")
+include("recovery.jl")
 
 @testset "libraries" begin
     @testset "PolynomialLibrary" begin

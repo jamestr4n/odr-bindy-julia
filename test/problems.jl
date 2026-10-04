@@ -67,6 +67,33 @@ function vanderpol_data(; t = collect(0:0.02:7.98), noise = 0.05, seed = 42)
 end
 
 """
+Three coupled states with quadratic cross terms,
+
+    x1' = -0.9 x1 + 2 x2 - 0.3 x1 x3
+    x2' = -2 x1 - 0.9 x2
+    x3' = 0.5 - 0.7 x3 + 0.2 x1 x2
+
+`true_mask` is for `PolynomialLibrary(3, 2)` (30 candidate terms). The system
+spirals into a fixed point, so `T` is kept short and `x0` far from it: from
+`x0 = [0.8, 0.3, 0.5]` or over `T = 8`, `x3` barely moves and its equation is
+not identifiable even without noise.
+"""
+function coupled_data(; t = collect(range(0, 3; length = 400)), noise = 0.02, seed = 3)
+    rng = MersenneTwister(seed)
+    f(x) = [-0.9x[1] + 2.0x[2] - 0.3x[1] * x[3],
+            -2.0x[1] - 0.9x[2],
+             0.5 - 0.7x[3] + 0.2x[1] * x[2]]
+    Xtrue = integrate(f, [2.0, -1.0, 1.5], t)
+    Xdata, sx = add_noise(Xtrue, noise, rng)
+    # 1 x1 x2 x3 x1^2 x1x2 x1x3 x2^2 x2x3 x3^2
+    true_mask = falses(10, 3)
+    true_mask[[2, 3, 7], 1] .= true
+    true_mask[[2, 3], 2] .= true
+    true_mask[[1, 4, 6], 3] .= true
+    return Xdata, t, sx, true_mask
+end
+
+"""
 Damped pendulum `θ' = ω, ω' = -2 sin θ - 0.2 ω`, released at `θ = 2.5` rad so
 that `sin θ` is far from `θ`. `true_mask` is for
 `CombinedLibrary(PolynomialLibrary(2, 1), FourierLibrary(2, 1))`, whose terms

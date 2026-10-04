@@ -55,7 +55,7 @@ Big-picture plan for the project, organised around Lloyd's two aims.
 - [x] Rename `gitignore` to `.gitignore` (without the dot it has no effect)
 - [ ] `test/runtests.jl` with `@testset`s:
   - [x] derivative checks (from `examples/check_derivatives.jl`): `test/derivatives.jl`, run first
-  - [ ] exact recovery on noise-free data
+  - [x] exact recovery on noise-free data: `test/recovery.jl` (oscillator, Van der Pol, a coupled 3-state system; coefficients to 1e-6)
   - [ ] Lorenz recovery at a fixed seed
   - [ ] MATLAB-equivalence regression test (small fixture saved in `test/data/`)
   - [x] one test per pluggable component (Aim 2): conformance checks in `test/conformance.jl`
