@@ -52,7 +52,7 @@ Big-picture plan for the project, organised around Lloyd's two aims.
 
 ## Track C: Software quality
 
-- [ ] Rename `gitignore` to `.gitignore` (without the dot it has no effect)
+- [x] Rename `gitignore` to `.gitignore` (without the dot it has no effect)
 - [ ] `test/runtests.jl` with `@testset`s:
   - [ ] derivative checks (from `examples/check_derivatives.jl`)
   - [ ] exact recovery on noise-free data

@@ -12,4 +12,5 @@ Manifest.toml
 
 # Data / outputs (adjust as needed)
 *.log
+!benchmarks/results/*.log
 /output/
